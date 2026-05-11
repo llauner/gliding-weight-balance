@@ -1,0 +1,20 @@
+{
+  "name": "gliding-weight-balance",
+  "version": "1.0.0",
+  "description": "One-page glider weight and balance app with profile storage",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "weight-and-balance",
+    "gliding",
+    "node",
+    "javascript"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

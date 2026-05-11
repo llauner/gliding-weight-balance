@@ -1,0 +1,206 @@
+[
+  {
+    "id": "profile_1778491482774_q7d1m4",
+    "createdAt": "2026-05-11T09:24:42.774Z",
+    "updatedAt": "2026-05-11T11:50:51.379Z",
+    "name": "D-KLDO",
+    "aircraft": {
+      "emptyWeight": 418.4,
+      "emptyArm": 610.4,
+      "wingArea": 10.84,
+      "maxWeight": 600,
+      "minCg": 320,
+      "maxCg": 430,
+      "itemDefinitions": [
+        {
+          "name": "Pilot",
+          "arm": -580,
+          "weightFactor": 1,
+          "permanent": false
+        },
+        {
+          "name": "Baggage",
+          "arm": 285,
+          "weightFactor": 1,
+          "permanent": true
+        },
+        {
+          "name": "Fuel - Main Tank",
+          "arm": 425,
+          "weightFactor": 0.75,
+          "permanent": false
+        },
+        {
+          "name": "Fuel - Wing Tank",
+          "arm": 194,
+          "weightFactor": 0.75,
+          "permanent": false
+        },
+        {
+          "name": "Ballast",
+          "arm": 194,
+          "weightFactor": 1,
+          "permanent": false
+        },
+        {
+          "name": "Ballast - Tail",
+          "arm": 4194,
+          "weightFactor": 1,
+          "permanent": false
+        },
+        {
+          "name": "Front Trim",
+          "arm": -1800,
+          "weightFactor": 1,
+          "permanent": true
+        }
+      ],
+      "stationDefinitions": [
+        {
+          "name": "Pilot",
+          "arm": -580,
+          "weightFactor": 1,
+          "permanent": false
+        },
+        {
+          "name": "Baggage",
+          "arm": 285,
+          "weightFactor": 1,
+          "permanent": true
+        },
+        {
+          "name": "Fuel - Main Tank",
+          "arm": 425,
+          "weightFactor": 0.75,
+          "permanent": false
+        },
+        {
+          "name": "Fuel - Wing Tank",
+          "arm": 194,
+          "weightFactor": 0.75,
+          "permanent": false
+        },
+        {
+          "name": "Ballast",
+          "arm": 194,
+          "weightFactor": 1,
+          "permanent": false
+        },
+        {
+          "name": "Ballast - Tail",
+          "arm": 4194,
+          "weightFactor": 1,
+          "permanent": false
+        },
+        {
+          "name": "Front Trim",
+          "arm": -1800,
+          "weightFactor": 1,
+          "permanent": true
+        }
+      ]
+    },
+    "items": [
+      {
+        "name": "Pilot",
+        "weight": 82,
+        "arm": -580,
+        "weightFactor": 1,
+        "permanent": false
+      },
+      {
+        "name": "Baggage",
+        "weight": 2,
+        "arm": 285,
+        "weightFactor": 1,
+        "permanent": true
+      },
+      {
+        "name": "Fuel - Main Tank",
+        "weight": 13,
+        "arm": 425,
+        "weightFactor": 0.75,
+        "permanent": false
+      },
+      {
+        "name": "Fuel - Wing Tank",
+        "weight": 1,
+        "arm": 194,
+        "weightFactor": 0.75,
+        "permanent": false
+      },
+      {
+        "name": "Ballast",
+        "weight": 0,
+        "arm": 194,
+        "weightFactor": 1,
+        "permanent": false
+      },
+      {
+        "name": "Ballast - Tail",
+        "weight": 0,
+        "arm": 4194,
+        "weightFactor": 1,
+        "permanent": false
+      },
+      {
+        "name": "Front Trim",
+        "weight": 4,
+        "arm": -1800,
+        "weightFactor": 1,
+        "permanent": true
+      }
+    ],
+    "stations": [
+      {
+        "name": "Pilot",
+        "weight": 82,
+        "arm": -580,
+        "weightFactor": 1,
+        "permanent": false
+      },
+      {
+        "name": "Baggage",
+        "weight": 2,
+        "arm": 285,
+        "weightFactor": 1,
+        "permanent": true
+      },
+      {
+        "name": "Fuel - Main Tank",
+        "weight": 13,
+        "arm": 425,
+        "weightFactor": 0.75,
+        "permanent": false
+      },
+      {
+        "name": "Fuel - Wing Tank",
+        "weight": 1,
+        "arm": 194,
+        "weightFactor": 0.75,
+        "permanent": false
+      },
+      {
+        "name": "Ballast",
+        "weight": 0,
+        "arm": 194,
+        "weightFactor": 1,
+        "permanent": false
+      },
+      {
+        "name": "Ballast - Tail",
+        "weight": 0,
+        "arm": 4194,
+        "weightFactor": 1,
+        "permanent": false
+      },
+      {
+        "name": "Front Trim",
+        "weight": 4,
+        "arm": -1800,
+        "weightFactor": 1,
+        "permanent": true
+      }
+    ]
+  }
+]
