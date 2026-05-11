@@ -1,0 +1,23 @@
+#Build image and store into Artifact Registry
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'europe-west9-docker.pkg.dev/$PROJECT_ID/ludo-registry/gliding-weight-balance:$COMMIT_SHA', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'europe-west9-docker.pkg.dev/$PROJECT_ID/ludo-registry/gliding-weight-balance:$COMMIT_SHA']
+
+  # Deploy image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args: 
+      - 'run'
+      - 'deploy'
+      - 'gliding-weight-balance'
+      - '--image'
+      - 'europe-west9-docker.pkg.dev/$PROJECT_ID/ludo-registry/gliding-weight-balance:$COMMIT_SHA'
+      - '--region'
+      - 'europe-west1'
+images:
+  - 'europe-west9-docker.pkg.dev/$PROJECT_ID/ludo-registry/gliding-weight-balance:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

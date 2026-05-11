@@ -31,6 +31,7 @@ const elements = {
   wingLoadingValue: document.querySelector("#wingLoadingValue"),
   cgValue: document.querySelector("#cgValue"),
   balanceStatusValue: document.querySelector("#balanceStatusValue"),
+  maxWaterBallastValue: document.querySelector("#maxWaterBallastValue"),
   itemsBody: document.querySelector("#itemsBody"),
   permanentItemsBody: document.querySelector("#permanentItemsBody"),
   itemRowTemplate: document.querySelector("#itemRowTemplate"),
@@ -73,6 +74,25 @@ function cgPercentWithinLimits(aircraft, cg) {
   return ((cg - minCg) / (maxCg - minCg)) * 100;
 }
 
+function calculateDryAndWetTotals(aircraft, items) {
+  // Calculate wet total (all items including water ballast)
+  const wetTotals = calculateTotals(aircraft, items);
+  
+  // Calculate dry total (excluding water ballast items)
+  const dryItems = items.filter(item => !item.waterBallast);
+  const dryTotals = calculateTotals(aircraft, dryItems);
+  
+  const dryPercent = cgPercentWithinLimits(aircraft, dryTotals.cg);
+  const wetPercent = cgPercentWithinLimits(aircraft, wetTotals.cg);
+  
+  return {
+    dryTotals,
+    wetTotals,
+    dryPercent,
+    wetPercent
+  };
+}
+
 function aircraftFromForm() {
   return {
     emptyWeight: numberValue(elements.emptyWeight),
@@ -94,7 +114,8 @@ function itemDefinitionsFromForm() {
     name: row.querySelector('[data-field="name"]').value.trim() || "Item",
     arm: numberValue(row.querySelector('[data-field="arm"]')),
     weightFactor: clampWeightFactor(numberValue(row.querySelector('[data-field="weightFactor"]'))),
-    permanent: row.querySelector('[data-field="permanent"]').checked
+    permanent: row.querySelector('[data-field="permanent"]').checked,
+    waterBallast: row.querySelector('[data-field="waterBallast"]').checked
   }));
 }
 
@@ -125,7 +146,8 @@ function combinedItemsFromForm() {
     arm: definition.arm,
     weight: weightMap.get(definition.id) ?? 0,
     weightFactor: definition.weightFactor,
-    permanent: definition.permanent
+    permanent: definition.permanent,
+    waterBallast: definition.waterBallast
   }));
 }
 
@@ -156,6 +178,7 @@ function renderItemRows(definitions, existingWeights = new Map()) {
     row.querySelector(".item-name").textContent = definition.name;
     row.querySelector('[data-field="weight"]').value = weightFor(definition.id, index);
     row.addEventListener("input", recalculateAndRender);
+    row.addEventListener("change", recalculateAndRender);
     if (definition.permanent) {
       elements.permanentItemsBody.appendChild(row);
     } else {
@@ -200,7 +223,7 @@ function profilePayload() {
   };
 }
 
-function addItemDefinitionRow(item = { name: "", arm: 0, weightFactor: 1, permanent: false }) {
+function addItemDefinitionRow(item = { name: "", arm: 0, weightFactor: 1, permanent: false, waterBallast: false }) {
   const fragment = elements.itemDefinitionRowTemplate.content.cloneNode(true);
   const row = fragment.querySelector("tr");
   const definitionId = item.id || createId("def");
@@ -211,6 +234,7 @@ function addItemDefinitionRow(item = { name: "", arm: 0, weightFactor: 1, perman
   row.querySelector('[data-field="arm"]').value = item.arm ?? 0;
   row.querySelector('[data-field="weightFactor"]').value = clampWeightFactor(item.weightFactor ?? 1);
   row.querySelector('[data-field="permanent"]').checked = Boolean(item.permanent);
+  row.querySelector('[data-field="waterBallast"]').checked = Boolean(item.waterBallast);
 
   row.draggable = true;
   row.addEventListener("dragstart", (event) => {
@@ -226,10 +250,12 @@ function addItemDefinitionRow(item = { name: "", arm: 0, weightFactor: 1, perman
     recalculateAndRender();
   });
 
-  row.addEventListener("input", () => {
+  const onDefinitionChange = () => {
     syncItemsFromDefinitions();
     recalculateAndRender();
-  });
+  };
+  row.addEventListener("input", onDefinitionChange);
+  row.addEventListener("change", onDefinitionChange);
   row.querySelector('[data-action="remove"]').addEventListener("click", () => {
     row.remove();
     syncItemsFromDefinitions();
@@ -243,9 +269,9 @@ function writeProfileToForm(profile) {
   elements.profileName.value = profile.name || "";
 
   const fallbackDefinitions = [
-    { name: "Pilot", arm: 420, weightFactor: 1, permanent: false },
-    { name: "Baggage", arm: 620, weightFactor: 1, permanent: false },
-    { name: "Ballast", arm: 280, weightFactor: 1, permanent: false }
+    { name: "Pilot", arm: 420, weightFactor: 1, permanent: false, waterBallast: false },
+    { name: "Baggage", arm: 620, weightFactor: 1, permanent: false, waterBallast: false },
+    { name: "Ballast", arm: 280, weightFactor: 1, permanent: false, waterBallast: false }
   ];
 
   const aircraft = profile.aircraft || {};
@@ -268,7 +294,8 @@ function writeProfileToForm(profile) {
         name: item.name,
         arm: item.arm,
         weightFactor: item.weightFactor ?? 1,
-        permanent: Boolean(item.permanent)
+        permanent: Boolean(item.permanent),
+        waterBallast: Boolean(item.waterBallast)
       }));
   const normalizedItemDefinitions = itemDefinitions.map((definition) => ({
     ...definition,
@@ -314,7 +341,7 @@ async function refreshProfiles() {
   renderProfileSelect(profiles || []);
 }
 
-function drawEnvelope(aircraft, totals, balance, cgPercent) {
+function drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPercent) {
   const canvas = elements.envelopeCanvas;
   const context = canvas.getContext("2d");
   const width = canvas.width;
@@ -328,14 +355,14 @@ function drawEnvelope(aircraft, totals, balance, cgPercent) {
 
   const polygon = envelopePolygon(aircraft);
   if (!polygon) {
-    context.fillStyle = "#6a5850";
-    context.font = '15px "IBM Plex Mono"';
+    context.fillStyle = "#5f6368";
+    context.font = '15px "Roboto Mono", monospace';
     context.fillText("Set min/max weight and CG limits to display envelope.", 24, height / 2);
     return;
   }
 
-  const cgValues = polygon.map((point) => point.cg).concat([totals.cg]);
-  const weightValues = polygon.map((point) => point.weight).concat([totals.totalWeight]);
+  const cgValues = polygon.map((point) => point.cg).concat([dryTotals.cg, wetTotals.cg]);
+  const weightValues = polygon.map((point) => point.weight).concat([dryTotals.totalWeight, wetTotals.totalWeight]);
 
   const minCg = Math.min(...cgValues) - 10;
   const maxCg = Math.max(...cgValues) + 10;
@@ -346,7 +373,7 @@ function drawEnvelope(aircraft, totals, balance, cgPercent) {
   const yForWeight = (weight) =>
     margin.top + graphHeight - ((weight - minWeight) / (maxWeight - minWeight || 1)) * graphHeight;
 
-  context.strokeStyle = "rgba(95, 60, 36, 0.35)";
+  context.strokeStyle = "#dadce0";
   context.lineWidth = 1;
 
   context.beginPath();
@@ -355,8 +382,8 @@ function drawEnvelope(aircraft, totals, balance, cgPercent) {
   context.lineTo(width - margin.right, height - margin.bottom);
   context.stroke();
 
-  context.fillStyle = "#6a5850";
-  context.font = '12px "IBM Plex Mono"';
+  context.fillStyle = "#5f6368";
+  context.font = '12px "Roboto Mono", monospace';
   context.fillText("CG", width - margin.right - 20, height - 10);
   context.save();
   context.translate(12, margin.top + graphHeight / 2);
@@ -370,11 +397,11 @@ function drawEnvelope(aircraft, totals, balance, cgPercent) {
   if (Number.isFinite(idealMinCg) && Number.isFinite(idealMaxCg) && idealMaxCg > idealMinCg) {
     const idealMinX = xForCg(idealMinCg);
     const idealMaxX = xForCg(idealMaxCg);
-    context.fillStyle = "rgba(42, 127, 98, 0.15)";
+    context.fillStyle = "rgba(24, 128, 56, 0.12)";
     context.fillRect(idealMinX, margin.top, idealMaxX - idealMinX, graphHeight);
     
     // Draw border lines for ideal range
-    context.strokeStyle = "rgba(42, 127, 98, 0.4)";
+    context.strokeStyle = "rgba(24, 128, 56, 0.3)";
     context.lineWidth = 1;
     context.beginPath();
     context.moveTo(idealMinX, margin.top);
@@ -395,18 +422,18 @@ function drawEnvelope(aircraft, totals, balance, cgPercent) {
     }
   });
   context.closePath();
-  context.fillStyle = "rgba(202, 83, 16, 0.15)";
+  context.fillStyle = "rgba(31, 115, 230, 0.12)";
   context.fill();
-  context.strokeStyle = "#ca5310";
+  context.strokeStyle = "#1f73e6";
   context.lineWidth = 2;
   context.stroke();
 
   // Draw dotted horizontal lines for max weight and empty weight
-  context.strokeStyle = "rgba(95, 60, 36, 0.4)";
+  context.strokeStyle = "#dadce0";
   context.lineWidth = 1;
   context.setLineDash([4, 3]);
-  context.font = '11px "IBM Plex Mono"';
-  context.fillStyle = "#6a5850";
+  context.font = '11px "Roboto Mono", monospace';
+  context.fillStyle = "#5f6368";
 
   // Max weight line
   const maxWeightY = yForWeight(aircraft.maxWeight);
@@ -426,82 +453,82 @@ function drawEnvelope(aircraft, totals, balance, cgPercent) {
 
   context.setLineDash([]);
 
-  const pointX = xForCg(totals.cg);
-  const pointY = yForWeight(totals.totalWeight);
+  // Draw dry point
+  const dryPointX = xForCg(dryTotals.cg);
+  const dryPointY = yForWeight(dryTotals.totalWeight);
   context.beginPath();
-  context.arc(pointX, pointY, 6, 0, Math.PI * 2);
-  context.fillStyle = balance.className === "ok" ? "#2a7f62" : "#a4161a";
+  context.arc(dryPointX, dryPointY, 5, 0, Math.PI * 2);
+  context.fillStyle = "#1f73e6";
   context.fill();
 
-  context.fillStyle = "#2a1f1b";
-  context.font = '12px "IBM Plex Mono"';
+  // Draw wet point
+  const wetPointX = xForCg(wetTotals.cg);
+  const wetPointY = yForWeight(wetTotals.totalWeight);
+  context.beginPath();
+  context.arc(wetPointX, wetPointY, 6, 0, Math.PI * 2);
+  context.fillStyle = balance.className === "ok" ? "#188038" : "#d33b27";
+  context.fill();
+
+  context.fillStyle = "#202124";
+  context.font = '12px "Roboto Mono", monospace';
+  
+  // Dry label
+  const dryPercentText = dryPercent === null ? "N/A" : `${dryPercent.toFixed(1)}%`;
   context.fillText(
-    `${totals.totalWeight.toFixed(1)} kg @ ${totals.cg.toFixed(0)} mm`,
-    Math.max(margin.left, pointX - 70),
-    Math.max(margin.top + 14, pointY - 10)
+    `Dry: ${dryTotals.totalWeight.toFixed(1)} kg @ ${dryTotals.cg.toFixed(0)} mm (${dryPercentText})`,
+    Math.max(margin.left, dryPointX - 120),
+    Math.max(margin.top + 14, dryPointY - 20)
   );
 
+  // Wet label
+  const wetPercentText = wetPercent === null ? "N/A" : `${wetPercent.toFixed(1)}%`;
   context.fillText(
-    `CG in limits: ${cgPercent === null ? "N/A" : `${cgPercent.toFixed(1)}%`}`,
-    Math.max(margin.left, pointX - 70),
-    Math.max(margin.top + 28, pointY + 6)
+    `Wet: ${wetTotals.totalWeight.toFixed(1)} kg @ ${wetTotals.cg.toFixed(0)} mm (${wetPercentText})`,
+    Math.max(margin.left, wetPointX - 120),
+    Math.max(margin.top + 28, wetPointY + 6)
   );
 
-  context.strokeStyle = "rgba(95, 60, 36, 0.35)";
+  context.strokeStyle = "#dadce0";
   context.lineWidth = 1;
   context.setLineDash([4, 3]);
 
-  // Vertical guide for the actual CG position.
+  // Vertical guide for the dry CG position
   context.beginPath();
-  context.moveTo(pointX, pointY);
-  context.lineTo(pointX, height - margin.bottom);
+  context.moveTo(dryPointX, dryPointY);
+  context.lineTo(dryPointX, height - margin.bottom);
   context.stroke();
 
-  // Horizontal guide for the actual total weight.
+  // Vertical guide for the wet CG position
   context.beginPath();
-  context.moveTo(margin.left, pointY);
-  context.lineTo(pointX, pointY);
+  context.moveTo(wetPointX, wetPointY);
+  context.lineTo(wetPointX, height - margin.bottom);
   context.stroke();
 
   context.setLineDash([]);
-  context.fillStyle = "#6a5850";
-  context.font = '11px "IBM Plex Mono"';
-
-  const cgLabel = `${totals.cg.toFixed(0)} mm`;
-  const weightLabel = `${totals.totalWeight.toFixed(1)} kg`;
-  const cgLabelWidth = context.measureText(cgLabel).width;
-  const weightLabelWidth = context.measureText(weightLabel).width;
-
-  context.fillText(
-    cgLabel,
-    Math.max(margin.left, Math.min(pointX - cgLabelWidth / 2, width - margin.right - cgLabelWidth)),
-    height - 12
-  );
-  context.fillText(
-    weightLabel,
-    10,
-    Math.max(margin.top + 12, pointY - 4)
-  );
 }
 
 function recalculateAndRender() {
   const aircraft = aircraftFromForm();
-  const totals = calculateTotals(aircraft, combinedItemsFromForm());
-  const balance = evaluateBalance(aircraft, totals);
-  const wingLoading = aircraft.wingArea > 0 ? totals.totalWeight / aircraft.wingArea : 0;
-  const cgPercent = cgPercentWithinLimits(aircraft, totals.cg);
+  const items = combinedItemsFromForm();
+  const { dryTotals, wetTotals, dryPercent, wetPercent } = calculateDryAndWetTotals(aircraft, items);
+  const balance = evaluateBalance(aircraft, wetTotals);
+  const wingLoading = aircraft.wingArea > 0 ? wetTotals.totalWeight / aircraft.wingArea : 0;
+  const maxWeight = Number(aircraft.maxWeight) || 0;
+  const maxWaterBallast = Math.max(0, maxWeight - wetTotals.totalWeight);
 
-  elements.totalWeightValue.textContent = `${totals.totalWeight.toFixed(1)} kg`;
+  elements.totalWeightValue.textContent = `${wetTotals.totalWeight.toFixed(1)} kg`;
   elements.wingLoadingValue.textContent = `${wingLoading.toFixed(1)} kg/m²`;
-  elements.cgValue.textContent = `${totals.cg.toFixed(0)} mm`;
+  elements.cgValue.textContent = `${wetTotals.cg.toFixed(0)} mm`;
+  elements.maxWaterBallastValue.textContent = `${Math.floor(maxWaterBallast)} kg`;
 
   const statusCard = elements.balanceStatusValue.closest(".result-card.status");
   statusCard.classList.remove("ok", "warn", "bad");
   statusCard.classList.add(balance.className);
-  const percentText = cgPercent === null ? "N/A" : `${cgPercent.toFixed(1)}%`;
-  elements.balanceStatusValue.innerHTML = `${balance.label}<br><span style="font-weight: 400; opacity: 0.8;">${percentText}</span>`;
+  const dryPercentText = dryPercent === null ? "N/A" : `${dryPercent.toFixed(1)}%`;
+  const wetPercentText = wetPercent === null ? "N/A" : `${wetPercent.toFixed(1)}%`;
+  elements.balanceStatusValue.innerHTML = `${balance.label}<br><span style="font-weight: 400; opacity: 0.8;">Dry: ${dryPercentText}<br>Wet: ${wetPercentText}</span>`;
 
-  drawEnvelope(aircraft, totals, balance, cgPercent);
+  drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPercent);
 }
 
 async function saveNewProfile() {
@@ -577,7 +604,7 @@ function bindEvents() {
   elements.itemDefinitionsBody.addEventListener("dragover", handleItemDefinitionDragOver);
 
   elements.addItemDefinitionBtn.addEventListener("click", () => {
-    addItemDefinitionRow({ name: "Item", arm: 0, weightFactor: 1, permanent: false });
+    addItemDefinitionRow({ name: "Item", arm: 0, weightFactor: 1, permanent: false, waterBallast: false });
     syncItemsFromDefinitions();
     recalculateAndRender();
   });

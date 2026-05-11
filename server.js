@@ -53,7 +53,8 @@ function normalizeProfile(payload) {
         weight: Number(item.weight) || 0,
         arm: Number(item.arm) || 0,
         weightFactor: normalizeWeightFactor(item.weightFactor),
-        permanent: Boolean(item.permanent)
+        permanent: Boolean(item.permanent),
+        waterBallast: Boolean(item.waterBallast)
       }))
     : Array.isArray(payload.stations)
       ? payload.stations.map((station) => ({
@@ -61,7 +62,8 @@ function normalizeProfile(payload) {
           weight: Number(station.weight) || 0,
           arm: Number(station.arm) || 0,
           weightFactor: normalizeWeightFactor(station.weightFactor),
-          permanent: Boolean(station.permanent)
+          permanent: Boolean(station.permanent),
+          waterBallast: Boolean(station.waterBallast)
         }))
       : [];
 
@@ -71,14 +73,16 @@ function normalizeProfile(payload) {
         name: String(item.name || "Item").trim(),
         arm: Number(item.arm) || 0,
         weightFactor: normalizeWeightFactor(item.weightFactor),
-        permanent: Boolean(item.permanent)
+        permanent: Boolean(item.permanent),
+        waterBallast: Boolean(item.waterBallast)
       }))
     : Array.isArray(aircraft.stationDefinitions)
       ? aircraft.stationDefinitions.map((station) => ({
           name: String(station.name || "Item").trim(),
           arm: Number(station.arm) || 0,
           weightFactor: normalizeWeightFactor(station.weightFactor),
-          permanent: Boolean(station.permanent)
+          permanent: Boolean(station.permanent),
+          waterBallast: Boolean(station.waterBallast)
         }))
       : [];
 
@@ -90,7 +94,8 @@ function normalizeProfile(payload) {
           arm: item.arm,
           weight: 0,
           weightFactor: item.weightFactor,
-          permanent: item.permanent
+          permanent: item.permanent,
+          waterBallast: item.waterBallast
         }));
 
   const persistedItemDefinitions =
@@ -100,7 +105,8 @@ function normalizeProfile(payload) {
           name: item.name,
           arm: item.arm,
           weightFactor: normalizeWeightFactor(item.weightFactor),
-          permanent: Boolean(item.permanent)
+          permanent: Boolean(item.permanent),
+          waterBallast: Boolean(item.waterBallast)
         }));
 
   return {
