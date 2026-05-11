@@ -2,8 +2,9 @@
   {
     "id": "profile_1778502057435_ml6vkj",
     "createdAt": "2026-05-11T12:20:57.435Z",
-    "updatedAt": "2026-05-11T12:20:57.435Z",
+    "updatedAt": "2026-05-11T15:31:21.550Z",
     "name": "D-KLDO",
+    "isDefault": true,
     "aircraft": {
       "emptyWeight": 418.4,
       "emptyArm": 610.4,
@@ -155,7 +156,7 @@
         "arm": 194,
         "weightFactor": 1,
         "permanent": false,
-        "waterBallast": false
+        "waterBallast": true
       },
       {
         "name": "Ballast - Tail",
@@ -163,7 +164,7 @@
         "arm": 4194,
         "weightFactor": 1,
         "permanent": false,
-        "waterBallast": false
+        "waterBallast": true
       },
       {
         "name": "Front Trim",
@@ -213,7 +214,7 @@
         "arm": 194,
         "weightFactor": 1,
         "permanent": false,
-        "waterBallast": false
+        "waterBallast": true
       },
       {
         "name": "Ballast - Tail",
@@ -221,7 +222,7 @@
         "arm": 4194,
         "weightFactor": 1,
         "permanent": false,
-        "waterBallast": false
+        "waterBallast": true
       },
       {
         "name": "Front Trim",

@@ -42,7 +42,8 @@ const elements = {
 };
 
 const state = {
-  selectedProfileId: ""
+  selectedProfileId: "",
+  profiles: []
 };
 
 function createId(prefix) {
@@ -324,9 +325,13 @@ function writeProfileToForm(profile) {
 }
 
 function renderProfileSelect(profiles) {
+  state.profiles = Array.isArray(profiles) ? profiles : [];
   const initialOption = '<option value="">Select a saved profile</option>';
-  const options = profiles
-    .map((profile) => `<option value="${profile.id}">${profile.name}</option>`)
+  const options = state.profiles
+    .map((profile) => {
+      const suffix = profile.isDefault ? " (default)" : "";
+      return `<option value="${profile.id}">${profile.name}${suffix}</option>`;
+    })
     .join("");
 
   elements.profileSelect.innerHTML = initialOption + options;
@@ -334,6 +339,21 @@ function renderProfileSelect(profiles) {
   if (state.selectedProfileId) {
     elements.profileSelect.value = state.selectedProfileId;
   }
+
+  updateProfileDeleteAvailability();
+}
+
+function selectedProfileSummary() {
+  return state.profiles.find((profile) => profile.id === elements.profileSelect.value) || null;
+}
+
+function updateProfileDeleteAvailability() {
+  const selected = selectedProfileSummary();
+  const isLocked = Boolean(selected && selected.isDefault);
+  elements.deleteProfileBtn.disabled = isLocked;
+  elements.deleteProfileBtn.title = isLocked
+    ? "Default profile cannot be deleted"
+    : "Delete selected profile";
 }
 
 async function refreshProfiles() {
@@ -450,6 +470,27 @@ function drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPe
   context.lineTo(width - margin.right, emptyWeightY);
   context.stroke();
   context.fillText(`${aircraft.emptyWeight.toFixed(0)} kg (empty)`, margin.left + 4, emptyWeightY - 3);
+
+  // Min/Max CG guide lines
+  const minCgGuideX = xForCg(aircraft.minCg);
+  const maxCgGuideX = xForCg(aircraft.maxCg);
+  context.setLineDash([]);
+  context.strokeStyle = "#f57c00";
+  context.lineWidth = 2;
+  context.beginPath();
+  context.moveTo(minCgGuideX, margin.top);
+  context.lineTo(minCgGuideX, height - margin.bottom);
+  context.moveTo(maxCgGuideX, margin.top);
+  context.lineTo(maxCgGuideX, height - margin.bottom);
+  context.stroke();
+
+  context.fillStyle = "#f57c00";
+  context.fillText(`Min CG ${aircraft.minCg.toFixed(0)} mm`, Math.max(margin.left, minCgGuideX - 36), height - margin.bottom + 14);
+  context.fillText(`Max CG ${aircraft.maxCg.toFixed(0)} mm`, Math.max(margin.left, maxCgGuideX - 36), height - margin.bottom + 28);
+
+  context.strokeStyle = "#dadce0";
+  context.lineWidth = 1;
+  context.fillStyle = "#5f6368";
 
   context.setLineDash([]);
 
@@ -573,6 +614,7 @@ async function loadSelectedProfile() {
   const profile = await getProfile(id);
   state.selectedProfileId = id;
   writeProfileToForm(profile);
+  updateProfileDeleteAvailability();
   setStatus(`Loaded profile '${profile.name}'.`);
 }
 
@@ -583,12 +625,19 @@ async function removeSelectedProfile() {
     return;
   }
 
+  const selected = selectedProfileSummary();
+  if (selected && selected.isDefault) {
+    setStatus("Default profile cannot be deleted.", true);
+    return;
+  }
+
   await deleteProfile(id);
   if (state.selectedProfileId === id) {
     state.selectedProfileId = "";
   }
 
   await refreshProfiles();
+  updateProfileDeleteAvailability();
   setStatus("Profile deleted.");
 }
 
@@ -629,6 +678,7 @@ function bindEvents() {
   elements.deleteProfileBtn.addEventListener("click", () => runAction(removeSelectedProfile));
   elements.profileSelect.addEventListener("change", () => {
     state.selectedProfileId = elements.profileSelect.value;
+    updateProfileDeleteAvailability();
   });
 }
 

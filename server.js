@@ -17,6 +17,10 @@ function normalizeWeightFactor(value) {
   return Math.min(1, Math.max(0, factor));
 }
 
+function isDefaultProfileName(name) {
+  return String(name || "").trim() === "D-KLDO";
+}
+
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/favicon.ico", express.static(path.join(__dirname, "public", "favicon.ico")));
@@ -36,7 +40,14 @@ async function readProfiles() {
 
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.map((profile) => ({
+      ...profile,
+      isDefault: Boolean(profile.isDefault) || isDefaultProfileName(profile.name)
+    }));
   } catch {
     return [];
   }
@@ -48,6 +59,7 @@ async function writeProfiles(profiles) {
 }
 
 function normalizeProfile(payload) {
+  const normalizedName = String(payload.name || "Untitled profile").trim();
   const rawItems = Array.isArray(payload.items)
     ? payload.items.map((item) => ({
         name: String(item.name || "Item").trim(),
@@ -111,7 +123,8 @@ function normalizeProfile(payload) {
         }));
 
   return {
-    name: String(payload.name || "Untitled profile").trim(),
+    name: normalizedName,
+    isDefault: isDefaultProfileName(normalizedName),
     aircraft: {
       emptyWeight: Number(aircraft.emptyWeight) || 0,
       emptyArm: Number(aircraft.emptyArm) || 0,
@@ -134,7 +147,8 @@ app.get("/api/profiles", async (_req, res) => {
   const summary = profiles.map((profile) => ({
     id: profile.id,
     name: profile.name,
-    updatedAt: profile.updatedAt
+    updatedAt: profile.updatedAt,
+    isDefault: Boolean(profile.isDefault)
   }));
 
   res.json(summary);
@@ -201,12 +215,19 @@ app.put("/api/profiles/:id", async (req, res) => {
 
 app.delete("/api/profiles/:id", async (req, res) => {
   const profiles = await readProfiles();
-  const nextProfiles = profiles.filter((item) => item.id !== req.params.id);
+  const profileToDelete = profiles.find((item) => item.id === req.params.id);
 
-  if (nextProfiles.length === profiles.length) {
+  if (!profileToDelete) {
     res.status(404).json({ message: "Profile not found" });
     return;
   }
+
+  if (profileToDelete.isDefault || isDefaultProfileName(profileToDelete.name)) {
+    res.status(403).json({ message: "Default profile cannot be deleted" });
+    return;
+  }
+
+  const nextProfiles = profiles.filter((item) => item.id !== req.params.id);
 
   await writeProfiles(nextProfiles);
   res.status(204).send();
