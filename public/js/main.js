@@ -10,6 +10,14 @@ import {
   listProfiles,
   updateProfile
 } from "./api.js";
+import {
+  applyStaticTranslations,
+  changeLanguage,
+  currentLanguage,
+  initI18n,
+  localizeApiErrorMessage,
+  t
+} from "./i18n.js";
 
 const elements = {
   profileName: document.querySelector("#profileName"),
@@ -32,6 +40,8 @@ const elements = {
   cgValue: document.querySelector("#cgValue"),
   balanceStatusValue: document.querySelector("#balanceStatusValue"),
   maxWaterBallastValue: document.querySelector("#maxWaterBallastValue"),
+  localeEnBtn: document.querySelector("#localeEnBtn"),
+  localeFrBtn: document.querySelector("#localeFrBtn"),
   itemsBody: document.querySelector("#itemsBody"),
   permanentItemsBody: document.querySelector("#permanentItemsBody"),
   itemRowTemplate: document.querySelector("#itemRowTemplate"),
@@ -62,6 +72,33 @@ function clampWeightFactor(value) {
 function setStatus(message, isError = false) {
   elements.statusText.textContent = message;
   elements.statusText.style.color = isError ? "#a4161a" : "#6a5850";
+}
+
+function updateLocaleButtons() {
+  const locale = currentLanguage();
+  elements.localeEnBtn.classList.toggle("active", locale === "en");
+  elements.localeFrBtn.classList.toggle("active", locale === "fr");
+}
+
+async function switchLocale(locale) {
+  await changeLanguage(locale);
+  applyStaticTranslations();
+  updateLocaleButtons();
+  renderProfileSelect(state.profiles);
+  syncItemsFromDefinitions();
+  recalculateAndRender();
+  setStatus(t("profiles.ready"));
+}
+
+function translateBalanceLabel(label) {
+  const map = {
+    "IN LIMITS": "balance.inLimits",
+    "WEIGHT + CG OUT": "balance.weightAndCgOut",
+    "WEIGHT OUT": "balance.weightOut",
+    "CG OUT": "balance.cgOut"
+  };
+
+  return t(map[label] || "results.unknown");
 }
 
 function cgPercentWithinLimits(aircraft, cg) {
@@ -112,7 +149,7 @@ function itemDefinitionsFromForm() {
   const rows = [...elements.itemDefinitionsBody.querySelectorAll("tr")];
   return rows.map((row) => ({
     id: row.dataset.definitionId || createId("def"),
-    name: row.querySelector('[data-field="name"]').value.trim() || "Item",
+    name: row.querySelector('[data-field="name"]').value.trim() || t("defaults.item"),
     arm: numberValue(row.querySelector('[data-field="arm"]')),
     weightFactor: clampWeightFactor(numberValue(row.querySelector('[data-field="weightFactor"]'))),
     permanent: row.querySelector('[data-field="permanent"]').checked,
@@ -236,6 +273,10 @@ function addItemDefinitionRow(item = { name: "", arm: 0, weightFactor: 1, perman
   row.querySelector('[data-field="weightFactor"]').value = clampWeightFactor(item.weightFactor ?? 1);
   row.querySelector('[data-field="permanent"]').checked = Boolean(item.permanent);
   row.querySelector('[data-field="waterBallast"]').checked = Boolean(item.waterBallast);
+  row.querySelector('[data-field="name"]').placeholder = t("template.pilotPlaceholder");
+  const removeButton = row.querySelector('[data-action="remove"]');
+  removeButton.title = t("template.removeItem");
+  removeButton.setAttribute("aria-label", t("template.removeItem"));
 
   row.draggable = true;
   row.addEventListener("dragstart", (event) => {
@@ -257,7 +298,7 @@ function addItemDefinitionRow(item = { name: "", arm: 0, weightFactor: 1, perman
   };
   row.addEventListener("input", onDefinitionChange);
   row.addEventListener("change", onDefinitionChange);
-  row.querySelector('[data-action="remove"]').addEventListener("click", () => {
+  removeButton.addEventListener("click", () => {
     row.remove();
     syncItemsFromDefinitions();
     recalculateAndRender();
@@ -270,9 +311,9 @@ function writeProfileToForm(profile) {
   elements.profileName.value = profile.name || "";
 
   const fallbackDefinitions = [
-    { name: "Pilot", arm: 420, weightFactor: 1, permanent: false, waterBallast: false },
-    { name: "Baggage", arm: 620, weightFactor: 1, permanent: false, waterBallast: false },
-    { name: "Ballast", arm: 280, weightFactor: 1, permanent: false, waterBallast: false }
+    { name: t("defaults.pilot"), arm: 420, weightFactor: 1, permanent: false, waterBallast: false },
+    { name: t("defaults.baggage"), arm: 620, weightFactor: 1, permanent: false, waterBallast: false },
+    { name: t("defaults.ballast"), arm: 280, weightFactor: 1, permanent: false, waterBallast: false }
   ];
 
   const aircraft = profile.aircraft || {};
@@ -326,10 +367,10 @@ function writeProfileToForm(profile) {
 
 function renderProfileSelect(profiles) {
   state.profiles = Array.isArray(profiles) ? profiles : [];
-  const initialOption = '<option value="">Select a saved profile</option>';
+  const initialOption = `<option value="">${t("profiles.selectSavedProfile")}</option>`;
   const options = state.profiles
     .map((profile) => {
-      const suffix = profile.isDefault ? " (default)" : "";
+      const suffix = profile.isDefault ? ` ${t("profiles.defaultSuffix")}` : "";
       return `<option value="${profile.id}">${profile.name}${suffix}</option>`;
     })
     .join("");
@@ -352,8 +393,8 @@ function updateProfileDeleteAvailability() {
   const isLocked = Boolean(selected && selected.isDefault);
   elements.deleteProfileBtn.disabled = isLocked;
   elements.deleteProfileBtn.title = isLocked
-    ? "Default profile cannot be deleted"
-    : "Delete selected profile";
+    ? t("profiles.defaultProfileLocked")
+    : t("profiles.deleteSelectedProfile");
 }
 
 async function refreshProfiles() {
@@ -377,7 +418,7 @@ function drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPe
   if (!polygon) {
     context.fillStyle = "#5f6368";
     context.font = '15px "Roboto Mono", monospace';
-    context.fillText("Set min/max weight and CG limits to display envelope.", 24, height / 2);
+    context.fillText(t("chart.setLimits"), 24, height / 2);
     return;
   }
 
@@ -404,11 +445,11 @@ function drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPe
 
   context.fillStyle = "#5f6368";
   context.font = '12px "Roboto Mono", monospace';
-  context.fillText("CG", width - margin.right - 20, height - 10);
+  context.fillText(t("chart.axisCg"), width - margin.right - 20, height - 10);
   context.save();
   context.translate(12, margin.top + graphHeight / 2);
   context.rotate(-Math.PI / 2);
-  context.fillText("Weight", 0, 0);
+  context.fillText(t("chart.axisWeight"), 0, 0);
   context.restore();
 
   // Draw ideal CG range
@@ -461,7 +502,7 @@ function drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPe
   context.moveTo(margin.left, maxWeightY);
   context.lineTo(width - margin.right, maxWeightY);
   context.stroke();
-  context.fillText(`${aircraft.maxWeight.toFixed(0)} kg (max)`, margin.left + 4, maxWeightY - 3);
+  context.fillText(t("chart.maxWeightLine", { value: aircraft.maxWeight.toFixed(0) }), margin.left + 4, maxWeightY - 3);
 
   // Empty weight line
   const emptyWeightY = yForWeight(aircraft.emptyWeight);
@@ -469,7 +510,7 @@ function drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPe
   context.moveTo(margin.left, emptyWeightY);
   context.lineTo(width - margin.right, emptyWeightY);
   context.stroke();
-  context.fillText(`${aircraft.emptyWeight.toFixed(0)} kg (empty)`, margin.left + 4, emptyWeightY - 3);
+  context.fillText(t("chart.emptyWeightLine", { value: aircraft.emptyWeight.toFixed(0) }), margin.left + 4, emptyWeightY - 3);
 
   // Min/Max CG guide lines
   const minCgGuideX = xForCg(aircraft.minCg);
@@ -485,8 +526,8 @@ function drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPe
   context.stroke();
 
   context.fillStyle = "#f57c00";
-  context.fillText(`Min CG ${aircraft.minCg.toFixed(0)} mm`, Math.max(margin.left, minCgGuideX - 36), height - margin.bottom + 14);
-  context.fillText(`Max CG ${aircraft.maxCg.toFixed(0)} mm`, Math.max(margin.left, maxCgGuideX - 36), height - margin.bottom + 28);
+  context.fillText(t("chart.minCgLine", { value: aircraft.minCg.toFixed(0) }), Math.max(margin.left, minCgGuideX - 36), height - margin.bottom + 14);
+  context.fillText(t("chart.maxCgLine", { value: aircraft.maxCg.toFixed(0) }), Math.max(margin.left, maxCgGuideX - 36), height - margin.bottom + 28);
 
   context.strokeStyle = "#dadce0";
   context.lineWidth = 1;
@@ -514,17 +555,25 @@ function drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPe
   context.font = '12px "Roboto Mono", monospace';
   
   // Dry label
-  const dryPercentText = dryPercent === null ? "N/A" : `${dryPercent.toFixed(1)}%`;
+  const dryPercentText = dryPercent === null ? t("chart.notAvailable") : `${dryPercent.toFixed(1)}%`;
   context.fillText(
-    `Dry: ${dryTotals.totalWeight.toFixed(1)} kg @ ${dryTotals.cg.toFixed(0)} mm (${dryPercentText})`,
+    t("chart.dryPoint", {
+      weight: dryTotals.totalWeight.toFixed(1),
+      cg: dryTotals.cg.toFixed(0),
+      percent: dryPercentText
+    }),
     Math.max(margin.left, dryPointX - 120),
     Math.max(margin.top + 14, dryPointY - 20)
   );
 
   // Wet label
-  const wetPercentText = wetPercent === null ? "N/A" : `${wetPercent.toFixed(1)}%`;
+  const wetPercentText = wetPercent === null ? t("chart.notAvailable") : `${wetPercent.toFixed(1)}%`;
   context.fillText(
-    `Wet: ${wetTotals.totalWeight.toFixed(1)} kg @ ${wetTotals.cg.toFixed(0)} mm (${wetPercentText})`,
+    t("chart.wetPoint", {
+      weight: wetTotals.totalWeight.toFixed(1),
+      cg: wetTotals.cg.toFixed(0),
+      percent: wetPercentText
+    }),
     Math.max(margin.left, wetPointX - 120),
     Math.max(margin.top + 28, wetPointY + 6)
   );
@@ -565,9 +614,9 @@ function recalculateAndRender() {
   const statusCard = elements.balanceStatusValue.closest(".result-card.status");
   statusCard.classList.remove("ok", "warn", "bad");
   statusCard.classList.add(balance.className);
-  const dryPercentText = dryPercent === null ? "N/A" : `${dryPercent.toFixed(1)}%`;
-  const wetPercentText = wetPercent === null ? "N/A" : `${wetPercent.toFixed(1)}%`;
-  elements.balanceStatusValue.innerHTML = `${balance.label}<br><span style="font-weight: 400; opacity: 0.8;">Dry: ${dryPercentText}<br>Wet: ${wetPercentText}</span>`;
+  const dryPercentText = dryPercent === null ? t("chart.notAvailable") : `${dryPercent.toFixed(1)}%`;
+  const wetPercentText = wetPercent === null ? t("chart.notAvailable") : `${wetPercent.toFixed(1)}%`;
+  elements.balanceStatusValue.innerHTML = `${translateBalanceLabel(balance.label)}<br><span style="font-weight: 400; opacity: 0.8;">${t("balance.details", { dry: dryPercentText, wet: wetPercentText })}</span>`;
 
   drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPercent);
 }
@@ -575,7 +624,7 @@ function recalculateAndRender() {
 async function saveNewProfile() {
   const payload = profilePayload();
   if (!payload.name) {
-    setStatus("Please enter a profile name before saving.", true);
+    setStatus(t("status.enterProfileNameBeforeSaving"), true);
     return;
   }
 
@@ -583,31 +632,31 @@ async function saveNewProfile() {
   state.selectedProfileId = saved.id;
   await refreshProfiles();
   elements.profileSelect.value = state.selectedProfileId;
-  setStatus(`Saved profile '${saved.name}'.`);
+  setStatus(t("status.savedProfile", { name: saved.name }));
 }
 
 async function updateCurrentProfile() {
   if (!state.selectedProfileId) {
-    setStatus("Select and load a profile before updating.", true);
+    setStatus(t("status.selectAndLoadBeforeUpdating"), true);
     return;
   }
 
   const payload = profilePayload();
   if (!payload.name) {
-    setStatus("Profile name cannot be empty.", true);
+    setStatus(t("status.profileNameEmpty"), true);
     return;
   }
 
   const updated = await updateProfile(state.selectedProfileId, payload);
   await refreshProfiles();
   elements.profileSelect.value = state.selectedProfileId;
-  setStatus(`Updated profile '${updated.name}'.`);
+  setStatus(t("status.updatedProfile", { name: updated.name }));
 }
 
 async function loadSelectedProfile() {
   const id = elements.profileSelect.value;
   if (!id) {
-    setStatus("Choose a profile to load.", true);
+    setStatus(t("status.chooseProfileToLoad"), true);
     return;
   }
 
@@ -615,19 +664,19 @@ async function loadSelectedProfile() {
   state.selectedProfileId = id;
   writeProfileToForm(profile);
   updateProfileDeleteAvailability();
-  setStatus(`Loaded profile '${profile.name}'.`);
+  setStatus(t("status.loadedProfile", { name: profile.name }));
 }
 
 async function removeSelectedProfile() {
   const id = elements.profileSelect.value;
   if (!id) {
-    setStatus("Choose a profile to delete.", true);
+    setStatus(t("status.chooseProfileToDelete"), true);
     return;
   }
 
   const selected = selectedProfileSummary();
   if (selected && selected.isDefault) {
-    setStatus("Default profile cannot be deleted.", true);
+    setStatus(t("status.defaultCannotDelete"), true);
     return;
   }
 
@@ -638,14 +687,15 @@ async function removeSelectedProfile() {
 
   await refreshProfiles();
   updateProfileDeleteAvailability();
-  setStatus("Profile deleted.");
+  setStatus(t("status.profileDeleted"));
 }
 
 async function runAction(fn) {
   try {
     await fn();
   } catch (error) {
-    setStatus(error.message || "Unexpected error", true);
+    const fallback = t("error.unexpected");
+    setStatus(localizeApiErrorMessage(error.message || fallback), true);
   }
 }
 
@@ -653,7 +703,7 @@ function bindEvents() {
   elements.itemDefinitionsBody.addEventListener("dragover", handleItemDefinitionDragOver);
 
   elements.addItemDefinitionBtn.addEventListener("click", () => {
-    addItemDefinitionRow({ name: "Item", arm: 0, weightFactor: 1, permanent: false, waterBallast: false });
+    addItemDefinitionRow({ name: t("defaults.item"), arm: 0, weightFactor: 1, permanent: false, waterBallast: false });
     syncItemsFromDefinitions();
     recalculateAndRender();
   });
@@ -676,6 +726,8 @@ function bindEvents() {
   elements.updateProfileBtn.addEventListener("click", () => runAction(updateCurrentProfile));
   elements.loadProfileBtn.addEventListener("click", () => runAction(loadSelectedProfile));
   elements.deleteProfileBtn.addEventListener("click", () => runAction(removeSelectedProfile));
+  elements.localeEnBtn.addEventListener("click", () => runAction(() => switchLocale("en")));
+  elements.localeFrBtn.addEventListener("click", () => runAction(() => switchLocale("fr")));
   elements.profileSelect.addEventListener("change", () => {
     state.selectedProfileId = elements.profileSelect.value;
     updateProfileDeleteAvailability();
@@ -683,12 +735,16 @@ function bindEvents() {
 }
 
 async function init() {
+  await initI18n();
+  applyStaticTranslations();
+  updateLocaleButtons();
+
   bindEvents();
 
   const defaultDefinitions = [
-    { name: "Pilot", arm: 420, weightFactor: 1, permanent: false },
-    { name: "Baggage", arm: 620, weightFactor: 1, permanent: false },
-    { name: "Ballast", arm: 280, weightFactor: 1, permanent: false }
+    { name: t("defaults.pilot"), arm: 420, weightFactor: 1, permanent: false },
+    { name: t("defaults.baggage"), arm: 620, weightFactor: 1, permanent: false },
+    { name: t("defaults.ballast"), arm: 280, weightFactor: 1, permanent: false }
   ];
   const defaultDefinitionsWithIds = defaultDefinitions.map((definition) => ({
     ...definition,
@@ -706,7 +762,7 @@ async function init() {
   try {
     await refreshProfiles();
   } catch (error) {
-    setStatus(`Unable to load profiles: ${error.message}`, true);
+    setStatus(t("status.unableToLoadProfiles", { message: localizeApiErrorMessage(error.message) }), true);
   }
 }
 

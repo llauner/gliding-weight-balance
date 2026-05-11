@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gliding Weight & Balance</title>
+    <title id="pageTitle" data-i18n="app.title">Gliding Weight & Balance</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,79 +17,99 @@
     <main class="app-shell">
       <header class="hero">
         <div class="hero-header">
-          <img src="/images/favicon-128x128.png" alt="Glider Logo" class="hero-logo" />
-          <h1>Glider Weight & Balance</h1>
+          <div class="hero-title-wrap">
+            <img src="/images/favicon-128x128.png" alt="Glider Logo" class="hero-logo" data-i18n-attr="alt:hero.logoAlt" />
+            <h1 data-i18n="hero.title">Glider Weight & Balance</h1>
+          </div>
+          <div class="locale-switcher" role="group" aria-label="Language selector" data-i18n-attr="aria-label:language.selectorLabel">
+            <button id="localeEnBtn" class="btn btn-icon locale-btn" type="button" title="English" aria-label="English" data-i18n-attr="title:language.english;aria-label:language.english">
+              <svg width="20" height="14" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+                <rect width="60" height="40" fill="#012169"/>
+                <path d="M0,0 L60,40 M60,0 L0,40" stroke="white" stroke-width="8"/>
+                <path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" stroke-width="4" stroke-dasharray="10,20"/>
+                <path d="M30,0 V40 M0,20 H60" stroke="white" stroke-width="10"/>
+                <path d="M30,0 V40 M0,20 H60" stroke="#C8102E" stroke-width="6"/>
+              </svg>
+            </button>
+            <button id="localeFrBtn" class="btn btn-icon locale-btn" type="button" title="Francais" aria-label="Francais" data-i18n-attr="title:language.french;aria-label:language.french">
+              <svg width="20" height="14" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0" y="0" width="20" height="40" fill="#002395"/>
+                <rect x="20" y="0" width="20" height="40" fill="white"/>
+                <rect x="40" y="0" width="20" height="40" fill="#ED2939"/>
+              </svg>
+            </button>
+          </div>
         </div>
-        <p>Calculate total weight, moment, and CG while saving reusable loading profiles.</p>
+        <p data-i18n="hero.subtitle">Calculate total weight, moment, and CG while saving reusable loading profiles.</p>
       </header>
 
       <section class="panel profile-panel">
-        <h2>Profiles</h2>
+        <h2 data-i18n="profiles.title">Profiles</h2>
         <div class="profile-controls">
-          <input id="profileName" type="text" placeholder="Profile name" />
+          <input id="profileName" type="text" placeholder="Profile name" data-i18n-attr="placeholder:profiles.profileNamePlaceholder" />
           <select id="profileSelect">
-            <option value="">Select a saved profile</option>
+            <option value="" data-i18n="profiles.selectSavedProfile">Select a saved profile</option>
           </select>
           <div class="profile-actions">
-            <button id="saveProfileBtn" class="btn accent btn-icon" title="Save new profile">💾</button>
-            <button id="updateProfileBtn" class="btn btn-icon" title="Update selected profile">↻</button>
-            <button id="loadProfileBtn" class="btn btn-icon" title="Load selected profile">↓</button>
-            <button id="deleteProfileBtn" class="btn danger btn-icon" title="Delete selected profile">✕</button>
+            <button id="saveProfileBtn" class="btn accent btn-icon" title="Save new profile" data-i18n-attr="title:profiles.saveNewProfile">💾</button>
+            <button id="updateProfileBtn" class="btn btn-icon" title="Update selected profile" data-i18n-attr="title:profiles.updateSelectedProfile">↻</button>
+            <button id="loadProfileBtn" class="btn btn-icon" title="Load selected profile" data-i18n-attr="title:profiles.loadSelectedProfile">↓</button>
+            <button id="deleteProfileBtn" class="btn danger btn-icon" title="Delete selected profile" data-i18n-attr="title:profiles.deleteSelectedProfile">✕</button>
           </div>
         </div>
-        <p id="statusText" class="status-text">Ready.</p>
+        <p id="statusText" class="status-text" data-i18n="profiles.ready">Ready.</p>
       </section>
 
       <section class="panel">
-        <h2>Results</h2>
+        <h2 data-i18n="results.title">Results</h2>
         <div class="results-layout">
           <div class="result-grid">
             <article class="result-card">
-              <span>Total Weight</span>
+              <span data-i18n="results.totalWeight">Total Weight</span>
               <strong id="totalWeightValue">0.0 kg</strong>
             </article>
             <article class="result-card">
-              <span>Wing Loading</span>
+              <span data-i18n="results.wingLoading">Wing Loading</span>
               <strong id="wingLoadingValue">0.0 kg/m²</strong>
             </article>
             <article class="result-card">
-              <span>Calculated CG</span>
+              <span data-i18n="results.calculatedCg">Calculated CG</span>
               <strong id="cgValue">0 mm</strong>
             </article>
             <article class="result-card status">
-              <span>Balance Status</span>
-              <strong id="balanceStatusValue">UNKNOWN</strong>
+              <span data-i18n="results.balanceStatus">Balance Status</span>
+              <strong id="balanceStatusValue" data-i18n="results.unknown">UNKNOWN</strong>
             </article>
             <article class="result-card span-full inline-label">
-              <span>Max Permissible Water Ballast</span>
+              <span data-i18n="results.maxPermissibleWaterBallast">Max Permissible Water Ballast</span>
               <strong id="maxWaterBallastValue">0 kg</strong>
             </article>
           </div>
-          <canvas id="envelopeCanvas" width="680" height="300" aria-label="CG envelope chart"></canvas>
+          <canvas id="envelopeCanvas" width="680" height="300" aria-label="CG envelope chart" data-i18n-attr="aria-label:chart.ariaLabel"></canvas>
         </div>
       </section>
 
       <section class="panel">
-        <h2>W&B Items</h2>
+        <h2 data-i18n="items.title">W&B Items</h2>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Item</th>
-                <th>Weight (kg)</th>
+                <th data-i18n="items.item">Item</th>
+                <th data-i18n="items.weightKg">Weight (kg)</th>
               </tr>
             </thead>
             <tbody id="itemsBody"></tbody>
           </table>
         </div>
         <details class="permanent-stations" id="permanentItemsDetails">
-          <summary>Permanent Items</summary>
+          <summary data-i18n="items.permanentItems">Permanent Items</summary>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Item</th>
-                  <th>Weight (kg)</th>
+                  <th data-i18n="items.item">Item</th>
+                  <th data-i18n="items.weightKg">Weight (kg)</th>
                 </tr>
               </thead>
               <tbody id="permanentItemsBody"></tbody>
@@ -99,32 +119,32 @@
       </section>
 
       <details class="panel aircraft-setup">
-        <summary>Aircraft Setup</summary>
+        <summary data-i18n="setup.title">Aircraft Setup</summary>
         <div class="grid-fields">
-          <label>Empty Weight (kg)<input id="emptyWeight" type="number" step="0.1" value="380" /></label>
-          <label>Empty Arm (mm)<input id="emptyArm" type="number" step="1" value="480" /></label>
-          <label>Wing Area (m²)<input id="wingArea" type="number" step="0.01" value="10.5" /></label>
-          <label>Max Weight (kg)<input id="maxWeight" type="number" step="0.1" value="600" /></label>
-          <label>Min CG (mm)<input id="minCg" type="number" step="1" value="390" /></label>
-          <label>Max CG (mm)<input id="maxCg" type="number" step="1" value="510" /></label>
-          <label>Ideal Min CG (mm)<input id="idealMinCg" type="number" step="1" value="420" /></label>
-          <label>Ideal Max CG (mm)<input id="idealMaxCg" type="number" step="1" value="480" /></label>
+          <label><span data-i18n="setup.emptyWeight">Empty Weight (kg)</span><input id="emptyWeight" type="number" step="0.1" value="380" /></label>
+          <label><span data-i18n="setup.emptyArm">Empty Arm (mm)</span><input id="emptyArm" type="number" step="1" value="480" /></label>
+          <label><span data-i18n="setup.wingArea">Wing Area (m²)</span><input id="wingArea" type="number" step="0.01" value="10.5" /></label>
+          <label><span data-i18n="setup.maxWeight">Max Weight (kg)</span><input id="maxWeight" type="number" step="0.1" value="600" /></label>
+          <label><span data-i18n="setup.minCg">Min CG (mm)</span><input id="minCg" type="number" step="1" value="390" /></label>
+          <label><span data-i18n="setup.maxCg">Max CG (mm)</span><input id="maxCg" type="number" step="1" value="510" /></label>
+          <label><span data-i18n="setup.idealMinCg">Ideal Min CG (mm)</span><input id="idealMinCg" type="number" step="1" value="420" /></label>
+          <label><span data-i18n="setup.idealMaxCg">Ideal Max CG (mm)</span><input id="idealMaxCg" type="number" step="1" value="480" /></label>
         </div>
 
         <div class="heading-row aircraft-entries-heading">
-          <h3>Weight & Balance Items Definition</h3>
-          <button id="addItemDefinitionBtn" class="btn">Add Item</button>
+          <h3 data-i18n="setup.definitionTitle">Weight & Balance Items Definition</h3>
+          <button id="addItemDefinitionBtn" class="btn" data-i18n="setup.addItem">Add Item</button>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Item</th>
-                <th>Arm (mm)</th>
-                <th>Weight Factor</th>
-                <th>Permanent</th>
-                <th>Water Ballast</th>
-                <th>Action</th>
+                <th data-i18n="items.item">Item</th>
+                <th data-i18n="setup.armMm">Arm (mm)</th>
+                <th data-i18n="setup.weightFactor">Weight Factor</th>
+                <th data-i18n="setup.permanent">Permanent</th>
+                <th data-i18n="setup.waterBallast">Water Ballast</th>
+                <th data-i18n="setup.action">Action</th>
               </tr>
             </thead>
             <tbody id="itemDefinitionsBody"></tbody>
@@ -142,17 +162,18 @@
 
     <template id="itemDefinitionRowTemplate">
       <tr>
-        <td><input data-field="name" type="text" placeholder="Pilot" /></td>
+        <td><input data-field="name" type="text" placeholder="Pilot" data-i18n-attr="placeholder:template.pilotPlaceholder" /></td>
         <td><input data-field="arm" type="number" step="1" value="0" /></td>
         <td><input data-field="weightFactor" type="number" min="0" max="1" step="0.01" value="1" /></td>
         <td><input data-field="permanent" type="checkbox" /></td>
         <td><input data-field="waterBallast" type="checkbox" /></td>
         <td>
-          <button data-action="remove" class="btn btn-icon danger" type="button" aria-label="Remove item" title="Remove item">✕</button>
+          <button data-action="remove" class="btn btn-icon danger" type="button" aria-label="Remove item" title="Remove item" data-i18n-attr="aria-label:template.removeItem;title:template.removeItem">✕</button>
         </td>
       </tr>
     </template>
 
+    <script src="https://unpkg.com/i18next@23.16.4/dist/umd/i18next.min.js"></script>
     <script type="module" src="/js/main.js"></script>
   </body>
 </html>

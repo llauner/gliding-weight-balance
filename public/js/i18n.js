@@ -1,0 +1,291 @@
+const resources = {
+  en: {
+    translation: {
+      app: {
+        title: "Gliding Weight & Balance"
+      },
+      hero: {
+        logoAlt: "Glider Logo",
+        title: "Glider Weight & Balance",
+        subtitle: "Calculate total weight, moment, and CG while saving reusable loading profiles."
+      },
+      language: {
+        selectorLabel: "Language selector",
+        english: "English",
+        french: "French"
+      },
+      profiles: {
+        title: "Profiles",
+        profileNamePlaceholder: "Profile name",
+        selectSavedProfile: "Select a saved profile",
+        saveNewProfile: "Save new profile",
+        updateSelectedProfile: "Update selected profile",
+        loadSelectedProfile: "Load selected profile",
+        deleteSelectedProfile: "Delete selected profile",
+        defaultProfileLocked: "Default profile cannot be deleted",
+        ready: "Ready.",
+        defaultSuffix: "(default)"
+      },
+      results: {
+        title: "Results",
+        totalWeight: "Total Weight",
+        wingLoading: "Wing Loading",
+        calculatedCg: "Calculated CG",
+        balanceStatus: "Balance Status",
+        maxPermissibleWaterBallast: "Max Permissible Water Ballast",
+        unknown: "UNKNOWN"
+      },
+      items: {
+        title: "W&B Items",
+        permanentItems: "Permanent Items",
+        item: "Item",
+        weightKg: "Weight (kg)"
+      },
+      setup: {
+        title: "Aircraft Setup",
+        emptyWeight: "Empty Weight (kg)",
+        emptyArm: "Empty Arm (mm)",
+        wingArea: "Wing Area (m²)",
+        maxWeight: "Max Weight (kg)",
+        minCg: "Min CG (mm)",
+        maxCg: "Max CG (mm)",
+        idealMinCg: "Ideal Min CG (mm)",
+        idealMaxCg: "Ideal Max CG (mm)",
+        definitionTitle: "Weight & Balance Items Definition",
+        addItem: "Add Item",
+        armMm: "Arm (mm)",
+        weightFactor: "Weight Factor",
+        permanent: "Permanent",
+        waterBallast: "Water Ballast",
+        action: "Action"
+      },
+      template: {
+        pilotPlaceholder: "Pilot",
+        removeItem: "Remove item"
+      },
+      defaults: {
+        item: "Item",
+        pilot: "Pilot",
+        baggage: "Baggage",
+        ballast: "Ballast"
+      },
+      status: {
+        enterProfileNameBeforeSaving: "Please enter a profile name before saving.",
+        savedProfile: "Saved profile '{{name}}'.",
+        selectAndLoadBeforeUpdating: "Select and load a profile before updating.",
+        profileNameEmpty: "Profile name cannot be empty.",
+        updatedProfile: "Updated profile '{{name}}'.",
+        chooseProfileToLoad: "Choose a profile to load.",
+        loadedProfile: "Loaded profile '{{name}}'.",
+        chooseProfileToDelete: "Choose a profile to delete.",
+        defaultCannotDelete: "Default profile cannot be deleted.",
+        profileDeleted: "Profile deleted.",
+        unableToLoadProfiles: "Unable to load profiles: {{message}}"
+      },
+      error: {
+        unexpected: "Unexpected error",
+        requestFailed: "Request failed",
+        profileNotFound: "Profile not found",
+        profileNameRequired: "Profile name is required",
+        defaultProfileCannotDelete: "Default profile cannot be deleted"
+      },
+      balance: {
+        inLimits: "IN LIMITS",
+        weightAndCgOut: "WEIGHT + CG OUT",
+        weightOut: "WEIGHT OUT",
+        cgOut: "CG OUT",
+        details: "Dry: {{dry}}<br>Wet: {{wet}}"
+      },
+      chart: {
+        ariaLabel: "CG envelope chart",
+        setLimits: "Set min/max weight and CG limits to display envelope.",
+        axisCg: "CG",
+        axisWeight: "Weight",
+        maxWeightLine: "{{value}} kg (max)",
+        emptyWeightLine: "{{value}} kg (empty)",
+        minCgLine: "Min CG {{value}} mm",
+        maxCgLine: "Max CG {{value}} mm",
+        dryPoint: "Dry: {{weight}} kg @ {{cg}} mm ({{percent}})",
+        wetPoint: "Wet: {{weight}} kg @ {{cg}} mm ({{percent}})",
+        notAvailable: "N/A"
+      }
+    }
+  },
+  fr: {
+    translation: {
+      app: {
+        title: "CG Planeur"
+      },
+      hero: {
+        logoAlt: "Logo du planeur",
+        title: "Centrage Planeur",
+        subtitle: "Calculez la masse totale, le moment et le CG tout en enregistrant des profils de chargement reutilisables."
+      },
+      language: {
+        selectorLabel: "Selecteur de langue",
+        english: "Anglais",
+        french: "Francais"
+      },
+      profiles: {
+        title: "Profils",
+        profileNamePlaceholder: "Nom du profil",
+        selectSavedProfile: "Selection profil enregistre",
+        saveNewProfile: "Enregistrer un nouveau profil",
+        updateSelectedProfile: "Mettre a jour le profil selectionne",
+        loadSelectedProfile: "Charger le profil selectionne",
+        deleteSelectedProfile: "Supprimer le profil selectionne",
+        defaultProfileLocked: "Le profil par defaut ne peut pas etre supprime",
+        ready: "Pret.",
+        defaultSuffix: "(par defaut)"
+      },
+      results: {
+        title: "Resultats",
+        totalWeight: "Masse totale",
+        wingLoading: "Charge alaire",
+        calculatedCg: "CG calcule",
+        balanceStatus: "Centrage",
+        maxPermissibleWaterBallast: "Ballast maximal autorise",
+        unknown: "INCONNU"
+      },
+      items: {
+        title: "Elements M&C",
+        permanentItems: "Elements permanents",
+        item: "Element",
+        weightKg: "Masse (kg)"
+      },
+      setup: {
+        title: "Configuration Planeur",
+        emptyWeight: "Masse a vide (kg)",
+        emptyArm: "Bras a vide (mm)",
+        wingArea: "Surface alaire (m²)",
+        maxWeight: "Masse max (kg)",
+        minCg: "CG min (mm)",
+        maxCg: "CG max (mm)",
+        idealMinCg: "CG ideal min (mm)",
+        idealMaxCg: "CG ideal max (mm)",
+        definitionTitle: "Definition des elements Masse & Centrage",
+        addItem: "Ajouter un element",
+        armMm: "Bras (mm)",
+        weightFactor: "Facteur de masse",
+        permanent: "Permanent",
+        waterBallast: "Ballast",
+        action: "Action"
+      },
+      template: {
+        pilotPlaceholder: "Pilote",
+        removeItem: "Supprimer l'element"
+      },
+      defaults: {
+        item: "Element",
+        pilot: "Pilote",
+        baggage: "Bagages",
+        ballast: "Ballast"
+      },
+      status: {
+        enterProfileNameBeforeSaving: "Veuillez saisir un nom de profil avant d'enregistrer.",
+        savedProfile: "Profil '{{name}}' enregistré.",
+        selectAndLoadBeforeUpdating: "Sélectionnez et chargez un profil avant la mise a jour.",
+        profileNameEmpty: "Le nom du profil ne peut pas etre vide.",
+        updatedProfile: "Profil '{{name}}' mis a jour.",
+        chooseProfileToLoad: "Choisissez un profil a charger.",
+        loadedProfile: "Profil '{{name}}' charge.",
+        chooseProfileToDelete: "Choisissez un profil a supprimer.",
+        defaultCannotDelete: "Le profil par déaut ne peut pas etre supprime.",
+        profileDeleted: "Profil supprime.",
+        unableToLoadProfiles: "Impossible de charger les profils : {{message}}"
+      },
+      error: {
+        unexpected: "Erreur inattendue",
+        requestFailed: "Echec de la requete",
+        profileNotFound: "Profil introuvable",
+        profileNameRequired: "Le nom du profil est requis",
+        defaultProfileCannotDelete: "Le profil par défaut ne peut pas etre supprimé"
+      },
+      balance: {
+        inLimits: "LIMITES: OK",
+        weightAndCgOut: "MASSE + CG HORS LIMITES",
+        weightOut: "MASSE HORS LIMITES",
+        cgOut: "CG HORS LIMITES",
+        details: "A vide : {{dry}}<br>Ballasté : {{wet}}"
+      },
+      chart: {
+        ariaLabel: "Graphique de l'enveloppe de CG",
+        setLimits: "Définissez les limites min/max de masse et de CG pour afficher l'enveloppe.",
+        axisCg: "CG",
+        axisWeight: "Masse",
+        maxWeightLine: "{{value}} kg (max)",
+        emptyWeightLine: "{{value}} kg (vide)",
+        minCgLine: "CG min {{value}} mm",
+        maxCgLine: "CG max {{value}} mm",
+        dryPoint: "A vide : {{weight}} kg @ {{cg}} mm ({{percent}})",
+        wetPoint: "Ballasté : {{weight}} kg @ {{cg}} mm ({{percent}})",
+        notAvailable: "N/A"
+      }
+    }
+  }
+};
+
+export async function initI18n() {
+  await window.i18next.init({
+    resources,
+    lng: "fr",
+    fallbackLng: "fr",
+    interpolation: {
+      escapeValue: false
+    }
+  });
+
+  document.documentElement.lang = window.i18next.language;
+}
+
+export function t(key, options = {}) {
+  return window.i18next.t(key, options);
+}
+
+export async function changeLanguage(locale) {
+  await window.i18next.changeLanguage(locale);
+  document.documentElement.lang = window.i18next.language;
+}
+
+export function currentLanguage() {
+  return window.i18next.language;
+}
+
+export function applyStaticTranslations() {
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    const key = node.dataset.i18n;
+    if (!key) {
+      return;
+    }
+
+    node.textContent = t(key);
+  });
+
+  document.querySelectorAll("[data-i18n-attr]").forEach((node) => {
+    const mapping = node.dataset.i18nAttr;
+    if (!mapping) {
+      return;
+    }
+
+    mapping.split(";").forEach((entry) => {
+      const [attr, key] = entry.split(":").map((part) => part && part.trim());
+      if (!attr || !key) {
+        return;
+      }
+
+      node.setAttribute(attr, t(key));
+    });
+  });
+}
+
+export function localizeApiErrorMessage(message) {
+  const keyByMessage = {
+    "Request failed": "error.requestFailed",
+    "Profile not found": "error.profileNotFound",
+    "Profile name is required": "error.profileNameRequired",
+    "Default profile cannot be deleted": "error.defaultProfileCannotDelete"
+  };
+
+  const key = keyByMessage[String(message || "")] || null;
+  return key ? t(key) : String(message || t("error.unexpected"));
+}
