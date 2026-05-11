@@ -112,6 +112,8 @@ function normalizeProfile(payload) {
       maxWeight: Number(aircraft.maxWeight) || 0,
       minCg: Number(aircraft.minCg) || 0,
       maxCg: Number(aircraft.maxCg) || 0,
+      idealMinCg: Number(aircraft.idealMinCg) || 420,
+      idealMaxCg: Number(aircraft.idealMaxCg) || 480,
       itemDefinitions: persistedItemDefinitions,
       stationDefinitions: persistedItemDefinitions
     },

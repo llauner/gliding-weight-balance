@@ -2,7 +2,7 @@
   {
     "id": "profile_1778491482774_q7d1m4",
     "createdAt": "2026-05-11T09:24:42.774Z",
-    "updatedAt": "2026-05-11T11:50:51.379Z",
+    "updatedAt": "2026-05-11T12:00:37.585Z",
     "name": "D-KLDO",
     "aircraft": {
       "emptyWeight": 418.4,
@@ -11,6 +11,8 @@
       "maxWeight": 600,
       "minCg": 320,
       "maxCg": 430,
+      "idealMinCg": 395,
+      "idealMaxCg": 403,
       "itemDefinitions": [
         {
           "name": "Pilot",

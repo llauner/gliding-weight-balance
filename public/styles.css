@@ -175,6 +175,31 @@ select:focus {
   font-weight: 600;
 }
 
+.aircraft-setup summary {
+  cursor: pointer;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: -1rem -1rem 0.8rem -1rem;
+  padding: 0 1rem 0.5rem 1rem;
+  list-style: none;
+}
+
+.aircraft-setup summary::-webkit-details-marker {
+  display: none;
+}
+
+.aircraft-setup summary::before {
+  content: "▶ ";
+  display: inline-block;
+  margin-right: 0.4rem;
+  transition: transform 200ms ease;
+  font-size: 0.9rem;
+}
+
+.aircraft-setup[open] summary::before {
+  transform: rotate(90deg);
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
