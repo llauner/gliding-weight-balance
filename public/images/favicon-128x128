@@ -1,0 +1,4 @@
+<attachment startByte=1 endByte=20 totalSize=15086 truncated=false>
+00000001  00 01 00 03 00 30 30 00  00 01 00 20 00 a8 25 00  |.....00.... ..%.|
+00000011  00 36 00                                          |.6.|
+</attachment>
