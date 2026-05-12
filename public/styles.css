@@ -58,7 +58,8 @@ body {
 .hero p {
   margin: 0.5rem 0 0;
   color: var(--text-secondary);
-  font-size: 1rem;
+  font-size: 0.88rem;
+  white-space: nowrap;
 }
 
 .hero-header {
@@ -676,6 +677,10 @@ tr:hover {
 @media (max-width: 560px) {
   .hero-header {
     align-items: flex-start;
+  }
+
+  .hero p {
+    white-space: normal;
   }
 
   .hero-title-wrap {

@@ -2,12 +2,12 @@ const resources = {
   en: {
     translation: {
       app: {
-        title: "Gliding Weight & Balance"
+        title: "Gliding W & B"
       },
       hero: {
         logoAlt: "Glider Logo",
-        title: "Glider Weight & Balance",
-        subtitle: "Calculate total weight, moment, and CG while saving reusable loading profiles."
+        title: "Glider W & B",
+        subtitle: "Calculate weight, CG while saving reusable loading profiles."
       },
       language: {
         selectorLabel: "Language selector",
