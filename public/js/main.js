@@ -28,6 +28,7 @@ import {
   localizeApiErrorMessage,
   t
 } from "./i18n.js";
+import { forceUpdateServiceWorker, registerServiceWorker } from "./sw-update.js";
 
 const elements = {
   profileName: document.querySelector("#profileName"),
@@ -55,6 +56,7 @@ const elements = {
   menuDropdown: document.querySelector("#menuDropdown"),
   menuCreateQrBtn: document.querySelector("#menuCreateQrBtn"),
   menuAboutBtn: document.querySelector("#menuAboutBtn"),
+  menuForceUpdateBtn: document.querySelector("#menuForceUpdateBtn"),
   aboutModal: document.querySelector("#aboutModal"),
   aboutVersionValue: document.querySelector("#aboutVersionValue"),
   aboutModalOkBtn: document.querySelector("#aboutModalOkBtn"),
@@ -92,8 +94,14 @@ function clampWeightFactor(value) {
 }
 
 function setStatus(message, isError = false) {
-  elements.statusText.textContent = message;
-  elements.statusText.style.color = isError ? "#a4161a" : "#6a5850";
+  if (elements.statusText) {
+    elements.statusText.textContent = message;
+    elements.statusText.style.color = isError ? "#a4161a" : "#6a5850";
+  }
+  // Optionally show a toast or alert for force update
+  if (isError && window && window.alert) {
+    window.alert(message);
+  }
 }
 
 function setMenuOpen(isOpen) {
@@ -948,6 +956,20 @@ function bindEvents() {
   }
 
   if (elements.menuCreateQrBtn) {
+      if (elements.menuForceUpdateBtn) {
+        elements.menuForceUpdateBtn.addEventListener("click", async () => {
+          setMenuOpen(false);
+          setStatus("Checking for update...");
+          try {
+            const updated = await forceUpdateServiceWorker();
+            if (!updated) {
+              setStatus("Already up to date.");
+            } // else: page will reload
+          } catch (err) {
+            setStatus("Update failed: " + (err && err.message ? err.message : err), true);
+          }
+        });
+      }
     elements.menuCreateQrBtn.addEventListener("click", () => {
       setMenuOpen(false);
       runAction(handleCreateQrCode);
@@ -986,6 +1008,7 @@ function bindEvents() {
 }
 
 async function init() {
+  registerServiceWorker();
   await initI18n();
   applyStaticTranslations();
   updateLocaleButtons();

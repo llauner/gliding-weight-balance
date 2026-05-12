@@ -17,6 +17,7 @@ const resources = {
       menu: {
         createQrCode: "Create QR Code",
         about: "About",
+        forceUpdate: "Force Update",
         createQrCodeComingSoon: "Create QR Code coming soon.",
         aboutComingSoon: "About coming soon."
       },
@@ -144,6 +145,7 @@ const resources = {
       menu: {
         createQrCode: "Creer le code QR",
         about: "A Propos",
+        forceUpdate: "Forcer la mise à jour",
         createQrCodeComingSoon: "Creation du code QR bientot disponible.",
         aboutComingSoon: "A Propos bientot disponible."
       },

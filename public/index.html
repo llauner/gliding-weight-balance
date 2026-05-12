@@ -49,6 +49,7 @@
               <div id="menuDropdown" class="menu-dropdown" hidden>
                 <button id="menuCreateQrBtn" class="menu-item" type="button" data-i18n="menu.createQrCode">Create QR Code</button>
                 <div class="menu-separator" role="separator" aria-hidden="true"></div>
+                <button id="menuForceUpdateBtn" class="menu-item" type="button" data-i18n="menu.forceUpdate">Force Update</button>
                 <button id="menuAboutBtn" class="menu-item" type="button" data-i18n="menu.about">About</button>
               </div>
             </div>
@@ -220,6 +221,9 @@
     </div>
 
     <script src="https://unpkg.com/i18next@23.16.4/dist/umd/i18next.min.js"></script>
+    <script type="module">
+      import "/js/sw-update.js";
+    </script>
     <script type="module" src="/js/main.js"></script>
   </body>
 </html>
