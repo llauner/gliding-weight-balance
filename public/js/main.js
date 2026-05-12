@@ -8,8 +8,18 @@ import {
   deleteProfile,
   getProfile,
   listProfiles,
+  setAuthTokenGetter,
   updateProfile
 } from "./api.js";
+import {
+  getCurrentIdToken,
+  getCurrentUser,
+  initIdentityAuth,
+  isAuthEnabled,
+  onIdentityAuthChanged,
+  signInWithGooglePopup,
+  signOutIdentity
+} from "./auth.js";
 import {
   applyStaticTranslations,
   changeLanguage,
@@ -23,6 +33,7 @@ const elements = {
   profileName: document.querySelector("#profileName"),
   profileSelect: document.querySelector("#profileSelect"),
   saveProfileBtn: document.querySelector("#saveProfileBtn"),
+  updateProfileBtn: document.querySelector("#updateProfileBtn"),
   loadProfileBtn: document.querySelector("#loadProfileBtn"),
   deleteProfileBtn: document.querySelector("#deleteProfileBtn"),
   statusText: document.querySelector("#statusText"),
@@ -41,6 +52,8 @@ const elements = {
   maxWaterBallastValue: document.querySelector("#maxWaterBallastValue"),
   localeEnBtn: document.querySelector("#localeEnBtn"),
   localeFrBtn: document.querySelector("#localeFrBtn"),
+  authUserText: document.querySelector("#authUserText"),
+  signInBtn: document.querySelector("#signInBtn"),
   itemsBody: document.querySelector("#itemsBody"),
   permanentItemsBody: document.querySelector("#permanentItemsBody"),
   itemRowTemplate: document.querySelector("#itemRowTemplate"),
@@ -54,7 +67,9 @@ const elements = {
 
 const state = {
   selectedProfileId: "",
-  profiles: []
+  profiles: [],
+  authenticatedUser: null,
+  authEnabled: false
 };
 
 function createId(prefix) {
@@ -75,6 +90,54 @@ function setStatus(message, isError = false) {
   elements.statusText.style.color = isError ? "#a4161a" : "#6a5850";
 }
 
+function updateAuthUi(user) {
+  state.authenticatedUser = user || null;
+
+  const identityLabel = state.authenticatedUser
+    ? (state.authenticatedUser.displayName || state.authenticatedUser.email || "")
+    : "";
+
+  if (elements.authUserText) {
+    elements.authUserText.textContent = identityLabel;
+    elements.authUserText.title = identityLabel;
+  }
+
+  if (!elements.signInBtn) {
+    return;
+  }
+
+  if (!state.authEnabled) {
+    elements.signInBtn.textContent = "🚫";
+    elements.signInBtn.disabled = true;
+    elements.signInBtn.title = t("auth.notConfigured");
+    elements.signInBtn.setAttribute("aria-label", t("auth.notConfigured"));
+  } else if (state.authenticatedUser) {
+    elements.signInBtn.textContent = "↩";
+    elements.signInBtn.disabled = false;
+    elements.signInBtn.title = t("auth.signOut");
+    elements.signInBtn.setAttribute("aria-label", t("auth.signOut"));
+  } else {
+    elements.signInBtn.textContent = "🔐";
+    elements.signInBtn.disabled = false;
+    elements.signInBtn.title = t("auth.signInWithGoogle");
+    elements.signInBtn.setAttribute("aria-label", t("auth.signInWithGoogle"));
+  }
+
+  const canManageProfiles = state.authEnabled && Boolean(state.authenticatedUser);
+  elements.saveProfileBtn.disabled = !canManageProfiles;
+  if (elements.updateProfileBtn) {
+    elements.updateProfileBtn.disabled = !canManageProfiles;
+  }
+  elements.loadProfileBtn.disabled = !canManageProfiles;
+  elements.deleteProfileBtn.disabled = !canManageProfiles;
+  elements.profileSelect.disabled = !canManageProfiles;
+
+  if (!canManageProfiles) {
+    state.selectedProfileId = "";
+    elements.profileSelect.value = "";
+  }
+}
+
 function updateLocaleButtons() {
   const locale = currentLanguage();
   elements.localeEnBtn.classList.toggle("active", locale === "en");
@@ -85,6 +148,7 @@ async function switchLocale(locale) {
   await changeLanguage(locale);
   applyStaticTranslations();
   updateLocaleButtons();
+  updateAuthUi(state.authenticatedUser);
   renderProfileSelect(state.profiles);
   syncItemsFromDefinitions();
   recalculateAndRender();
@@ -415,6 +479,12 @@ function selectedProfileSummary() {
 }
 
 function updateProfileDeleteAvailability() {
+  if (!state.authEnabled || !state.authenticatedUser) {
+    elements.deleteProfileBtn.disabled = true;
+    elements.deleteProfileBtn.title = t("auth.signInRequired");
+    return;
+  }
+
   const selected = selectedProfileSummary();
   const isLocked = Boolean(selected && selected.isDefault);
   elements.deleteProfileBtn.disabled = isLocked;
@@ -424,8 +494,31 @@ function updateProfileDeleteAvailability() {
 }
 
 async function refreshProfiles() {
+  if (!state.authEnabled || !state.authenticatedUser) {
+    renderProfileSelect([]);
+    return;
+  }
+
   const profiles = await listProfiles();
   renderProfileSelect(profiles || []);
+}
+
+async function handleSignInButtonClick() {
+  if (!state.authEnabled) {
+    setStatus(t("auth.notConfigured"), true);
+    return;
+  }
+
+  if (state.authenticatedUser) {
+    await signOutIdentity();
+    setStatus(t("auth.signedOut"));
+    await refreshProfiles();
+    return;
+  }
+
+  await signInWithGooglePopup();
+  setStatus(t("auth.signedIn"));
+  await refreshProfiles();
 }
 
 function drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPercent) {
@@ -743,6 +836,7 @@ function bindEvents() {
   elements.deleteProfileBtn.addEventListener("click", () => runAction(removeSelectedProfile));
   elements.localeEnBtn.addEventListener("click", () => runAction(() => switchLocale("en")));
   elements.localeFrBtn.addEventListener("click", () => runAction(() => switchLocale("fr")));
+  elements.signInBtn.addEventListener("click", () => runAction(handleSignInButtonClick));
   elements.profileSelect.addEventListener("change", () => {
     if (elements.profileSelect.value !== state.selectedProfileId) {
       state.selectedProfileId = "";
@@ -764,6 +858,15 @@ async function init() {
   await initI18n();
   applyStaticTranslations();
   updateLocaleButtons();
+
+  setAuthTokenGetter(() => getCurrentIdToken());
+  const authInitResult = await initIdentityAuth();
+  state.authEnabled = Boolean(authInitResult && authInitResult.enabled && isAuthEnabled());
+  updateAuthUi(getCurrentUser());
+  onIdentityAuthChanged((user) => {
+    updateAuthUi(user);
+    runAction(refreshProfiles);
+  });
 
   bindEvents();
 

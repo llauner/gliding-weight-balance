@@ -141,3 +141,5 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+gliding-wb@gliding-492205.iam.gserviceaccount.com.json
+.vscode/launch.json

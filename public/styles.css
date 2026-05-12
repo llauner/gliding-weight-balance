@@ -84,6 +84,36 @@ body {
   gap: 0.4rem;
 }
 
+.locale-auth-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: stretch;
+}
+
+.auth-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.auth-user-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auth-btn {
+  min-width: 2rem;
+  height: 2rem;
+  font-size: 0.95rem;
+}
+
 .locale-btn {
   min-width: 2.2rem;
   padding: 0.3rem;
@@ -197,6 +227,24 @@ select:focus {
   box-shadow: var(--shadow-hover);
 }
 
+.btn:disabled,
+.btn[disabled] {
+  background: #e5e7eb;
+  color: #9ca3af;
+  border-color: #d1d5db;
+  cursor: not-allowed;
+  opacity: 1;
+  box-shadow: none;
+  filter: grayscale(100%);
+}
+
+.btn:disabled:hover,
+.btn[disabled]:hover {
+  background: #e5e7eb;
+  color: #9ca3af;
+  box-shadow: none;
+}
+
 .btn.accent {
   background: var(--primary);
   color: #fff;
@@ -223,6 +271,13 @@ select:focus {
 .btn.danger:hover {
   background: #fce4e1;
   box-shadow: var(--shadow-hover);
+}
+
+.btn.danger:disabled,
+.btn.danger[disabled] {
+  background: #e5e7eb;
+  color: #9ca3af;
+  border-color: #d1d5db;
 }
 
 .btn.small {

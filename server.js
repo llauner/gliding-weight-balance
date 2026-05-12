@@ -1,6 +1,7 @@
 const express = require("express");
 const fs = require("fs/promises");
 const path = require("path");
+const { getWebAuthConfig, requireAuth } = require("./auth/identityPlatform");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,6 +25,18 @@ function isDefaultProfileName(name) {
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/favicon.ico", express.static(path.join(__dirname, "public", "favicon.ico")));
+
+app.get("/api/auth/config", (_req, res) => {
+  const config = getWebAuthConfig();
+  if (!config) {
+    res.json({ enabled: false });
+    return;
+  }
+
+  res.json({ enabled: true, config });
+});
+
+app.use("/api/profiles", requireAuth);
 
 async function ensureProfilesStore() {
   try {

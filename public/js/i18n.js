@@ -14,6 +14,14 @@ const resources = {
         english: "English",
         french: "French"
       },
+      auth: {
+        signInWithGoogle: "Sign in with Google",
+        signOut: "Sign out",
+        signInRequired: "Sign in required",
+        signedIn: "Signed in.",
+        signedOut: "Signed out.",
+        notConfigured: "Authentication is not configured"
+      },
       profiles: {
         title: "Profiles",
         profileNamePlaceholder: "Profile name",
@@ -85,6 +93,7 @@ const resources = {
       error: {
         unexpected: "Unexpected error",
         requestFailed: "Request failed",
+        unauthorized: "Unauthorized",
         profileNotFound: "Profile not found",
         profileNameRequired: "Profile name is required",
         defaultProfileCannotDelete: "Default profile cannot be deleted"
@@ -125,6 +134,14 @@ const resources = {
         selectorLabel: "Selecteur de langue",
         english: "Anglais",
         french: "Francais"
+      },
+      auth: {
+        signInWithGoogle: "Se connecter avec Google",
+        signOut: "Se deconnecter",
+        signInRequired: "Connexion requise",
+        signedIn: "Connecte.",
+        signedOut: "Deconnecte.",
+        notConfigured: "L'authentification n'est pas configuree"
       },
       profiles: {
         title: "Profils",
@@ -197,6 +214,7 @@ const resources = {
       error: {
         unexpected: "Erreur inattendue",
         requestFailed: "Echec de la requete",
+        unauthorized: "Non autorise",
         profileNotFound: "Profil introuvable",
         profileNameRequired: "Le nom du profil est requis",
         defaultProfileCannotDelete: "Le profil par défaut ne peut pas etre supprimé"
@@ -281,6 +299,7 @@ export function applyStaticTranslations() {
 export function localizeApiErrorMessage(message) {
   const keyByMessage = {
     "Request failed": "error.requestFailed",
+    Unauthorized: "error.unauthorized",
     "Profile not found": "error.profileNotFound",
     "Profile name is required": "error.profileNameRequired",
     "Default profile cannot be deleted": "error.defaultProfileCannotDelete"

@@ -23,23 +23,29 @@
             <img src="/images/favicon-128x128.png" alt="Glider Logo" class="hero-logo" data-i18n-attr="alt:hero.logoAlt" />
             <h1 data-i18n="hero.title">Glider Weight & Balance</h1>
           </div>
-          <div class="locale-switcher" role="group" aria-label="Language selector" data-i18n-attr="aria-label:language.selectorLabel">
-            <button id="localeEnBtn" class="btn btn-icon locale-btn" type="button" title="English" aria-label="English" data-i18n-attr="title:language.english;aria-label:language.english">
-              <svg width="20" height="14" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
-                <rect width="60" height="40" fill="#012169"/>
-                <path d="M0,0 L60,40 M60,0 L0,40" stroke="white" stroke-width="8"/>
-                <path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" stroke-width="4" stroke-dasharray="10,20"/>
-                <path d="M30,0 V40 M0,20 H60" stroke="white" stroke-width="10"/>
-                <path d="M30,0 V40 M0,20 H60" stroke="#C8102E" stroke-width="6"/>
-              </svg>
-            </button>
-            <button id="localeFrBtn" class="btn btn-icon locale-btn" type="button" title="Francais" aria-label="Francais" data-i18n-attr="title:language.french;aria-label:language.french">
-              <svg width="20" height="14" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
-                <rect x="0" y="0" width="20" height="40" fill="#002395"/>
-                <rect x="20" y="0" width="20" height="40" fill="white"/>
-                <rect x="40" y="0" width="20" height="40" fill="#ED2939"/>
-              </svg>
-            </button>
+          <div class="locale-auth-stack">
+            <div class="locale-switcher" role="group" aria-label="Language selector" data-i18n-attr="aria-label:language.selectorLabel">
+              <button id="localeEnBtn" class="btn btn-icon locale-btn" type="button" title="English" aria-label="English" data-i18n-attr="title:language.english;aria-label:language.english">
+                <svg width="20" height="14" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="60" height="40" fill="#012169"/>
+                  <path d="M0,0 L60,40 M60,0 L0,40" stroke="white" stroke-width="8"/>
+                  <path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" stroke-width="4" stroke-dasharray="10,20"/>
+                  <path d="M30,0 V40 M0,20 H60" stroke="white" stroke-width="10"/>
+                  <path d="M30,0 V40 M0,20 H60" stroke="#C8102E" stroke-width="6"/>
+                </svg>
+              </button>
+              <button id="localeFrBtn" class="btn btn-icon locale-btn" type="button" title="Francais" aria-label="Francais" data-i18n-attr="title:language.french;aria-label:language.french">
+                <svg width="20" height="14" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="0" y="0" width="20" height="40" fill="#002395"/>
+                  <rect x="20" y="0" width="20" height="40" fill="white"/>
+                  <rect x="40" y="0" width="20" height="40" fill="#ED2939"/>
+                </svg>
+              </button>
+            </div>
+            <div class="auth-row">
+              <span id="authUserText" class="auth-user-text" aria-live="polite"></span>
+              <button id="signInBtn" class="btn btn-icon auth-btn" type="button" title="Sign in with Google" aria-label="Sign in with Google" data-i18n-attr="title:auth.signInWithGoogle;aria-label:auth.signInWithGoogle">🔐</button>
+            </div>
           </div>
         </div>
         <p data-i18n="hero.subtitle">Calculate total weight, moment, and CG while saving reusable loading profiles.</p>
@@ -53,7 +59,7 @@
             <option value="" data-i18n="profiles.selectSavedProfile">Select a saved profile</option>
           </select>
           <div class="profile-actions">
-            <button id="saveProfileBtn" class="btn accent btn-icon" title="Save new profile" data-i18n-attr="title:profiles.saveNewProfile">💾</button>
+            <button id="saveProfileBtn" class="btn btn-icon" title="Save new profile" data-i18n-attr="title:profiles.saveNewProfile">💾</button>
             <button id="loadProfileBtn" class="btn btn-icon" title="Load selected profile" data-i18n-attr="title:profiles.loadSelectedProfile">↓</button>
             <button id="deleteProfileBtn" class="btn danger btn-icon" title="Delete selected profile" data-i18n-attr="title:profiles.deleteSelectedProfile">✕</button>
           </div>
