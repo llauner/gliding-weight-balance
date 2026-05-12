@@ -34,7 +34,6 @@ const elements = {
   profileSelect: document.querySelector("#profileSelect"),
   saveProfileBtn: document.querySelector("#saveProfileBtn"),
   updateProfileBtn: document.querySelector("#updateProfileBtn"),
-  loadProfileBtn: document.querySelector("#loadProfileBtn"),
   deleteProfileBtn: document.querySelector("#deleteProfileBtn"),
   statusText: document.querySelector("#statusText"),
   emptyWeight: document.querySelector("#emptyWeight"),
@@ -93,13 +92,11 @@ function setStatus(message, isError = false) {
 function syncProfileControlAvailability() {
   const canManageProfiles = state.authEnabled && Boolean(state.authenticatedUser);
   const hasProfiles = state.profiles.length > 0;
-  const hasSelection = Boolean(elements.profileSelect && elements.profileSelect.value);
 
   elements.saveProfileBtn.disabled = !canManageProfiles;
   if (elements.updateProfileBtn) {
     elements.updateProfileBtn.disabled = !canManageProfiles;
   }
-  elements.loadProfileBtn.disabled = !hasSelection;
   elements.deleteProfileBtn.disabled = !canManageProfiles;
   elements.profileSelect.disabled = !hasProfiles;
 }
@@ -845,17 +842,19 @@ function bindEvents() {
   });
 
   elements.saveProfileBtn.addEventListener("click", () => runAction(saveProfile));
-  elements.loadProfileBtn.addEventListener("click", () => runAction(loadSelectedProfile));
   elements.deleteProfileBtn.addEventListener("click", () => runAction(removeSelectedProfile));
   elements.localeEnBtn.addEventListener("click", () => runAction(() => switchLocale("en")));
   elements.localeFrBtn.addEventListener("click", () => runAction(() => switchLocale("fr")));
   elements.signInBtn.addEventListener("click", () => runAction(handleSignInButtonClick));
   elements.profileSelect.addEventListener("change", () => {
-    if (elements.profileSelect.value !== state.selectedProfileId) {
+    const selectedId = elements.profileSelect.value;
+    if (!selectedId) {
       state.selectedProfileId = "";
+      updateProfileDeleteAvailability();
+      return;
     }
-    syncProfileControlAvailability();
-    updateProfileDeleteAvailability();
+
+    runAction(loadSelectedProfile);
   });
 
   if (elements.aircraftSetupToggle) {

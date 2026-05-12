@@ -60,9 +60,14 @@
           </select>
           <button id="deleteProfileBtn" class="btn danger btn-icon" title="Delete selected profile" data-i18n-attr="title:profiles.deleteSelectedProfile">✕</button>
           <div class="profile-actions">
-            <button id="saveProfileBtn" class="btn btn-icon" title="Save new profile" data-i18n-attr="title:profiles.saveNewProfile">💾</button>
+            <button id="saveProfileBtn" class="btn btn-icon" title="Save new profile" data-i18n-attr="title:profiles.saveNewProfile" aria-label="Save profile">
+              <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
+                <path d="M5 3h12l4 4v14H3V3h2z" />
+                <path d="M7 3v6h8V3" />
+                <path d="M7 21v-7h10v7" />
+              </svg>
+            </button>
             <p id="statusText" class="status-text" data-i18n="profiles.ready">Ready.</p>
-            <button id="loadProfileBtn" class="btn btn-icon" title="Load selected profile" data-i18n-attr="title:profiles.loadSelectedProfile">↓</button>
           </div>
         </div>
       </section>
