@@ -6,6 +6,13 @@ const firestore = require("./db/firestore");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const packageVersion = require("./package.json").version;
+const GITHUB_TAGS_API_URL = "https://api.github.com/repos/llauner/gliding-weight-balance/tags?per_page=1";
+const APP_VERSION_CACHE_TTL_MS = 5 * 60 * 1000;
+let appVersionCache = {
+  value: process.env.APP_VERSION || packageVersion || "unknown",
+  fetchedAt: 0
+};
 
 const dataDir = path.join(__dirname, "data");
 const profilesPath = path.join(dataDir, "profiles.json");
@@ -35,6 +42,55 @@ app.get("/api/auth/config", (_req, res) => {
   }
 
   res.json({ enabled: true, config });
+});
+
+async function fetchLatestAppVersion() {
+  const now = Date.now();
+  if (appVersionCache.fetchedAt > 0 && (now - appVersionCache.fetchedAt) < APP_VERSION_CACHE_TTL_MS) {
+    return appVersionCache.value;
+  }
+
+  try {
+    const response = await fetch(GITHUB_TAGS_API_URL, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        "User-Agent": "gliding-weight-balance"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`GitHub tags request failed: ${response.status}`);
+    }
+
+    const tags = await response.json();
+    const latestTagName = Array.isArray(tags) && tags[0] && typeof tags[0].name === "string"
+      ? tags[0].name.trim()
+      : "";
+
+    if (!latestTagName) {
+      throw new Error("GitHub tags response did not contain a valid tag name");
+    }
+
+    process.env.APP_VERSION = latestTagName;
+    appVersionCache = {
+      value: latestTagName,
+      fetchedAt: now
+    };
+    return latestTagName;
+  } catch (error) {
+    console.warn("Unable to fetch latest GitHub tag for APP_VERSION:", error.message || error);
+    const fallbackValue = process.env.APP_VERSION || appVersionCache.value || packageVersion || "unknown";
+    appVersionCache = {
+      value: fallbackValue,
+      fetchedAt: now
+    };
+    return fallbackValue;
+  }
+}
+
+app.get("/api/version", async (_req, res) => {
+  const appVersion = await fetchLatestAppVersion();
+  res.json({ appVersion });
 });
 
 // Optional auth middleware - attaches user if authenticated, but doesn't require it

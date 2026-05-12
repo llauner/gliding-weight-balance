@@ -4,8 +4,8 @@
   "description": "One-page glider weight and balance app with profile storage",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node --disable-warning=DEP0040 server.js",
+    "dev": "node --disable-warning=DEP0040 server.js"
   },
   "keywords": [
     "weight-and-balance",

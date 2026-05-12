@@ -56,6 +56,7 @@ const elements = {
   menuCreateQrBtn: document.querySelector("#menuCreateQrBtn"),
   menuAboutBtn: document.querySelector("#menuAboutBtn"),
   aboutModal: document.querySelector("#aboutModal"),
+  aboutVersionValue: document.querySelector("#aboutVersionValue"),
   aboutModalOkBtn: document.querySelector("#aboutModalOkBtn"),
   authUserText: document.querySelector("#authUserText"),
   signInBtn: document.querySelector("#signInBtn"),
@@ -108,6 +109,33 @@ function handleCreateQrCode() {
   setStatus(t("menu.createQrCodeComingSoon"));
 }
 
+function setAboutVersionText(value) {
+  if (!elements.aboutVersionValue) {
+    return;
+  }
+
+  elements.aboutVersionValue.textContent = value;
+}
+
+async function fetchAppVersion() {
+  const response = await fetch("/api/version", {
+    headers: {
+      Accept: "application/json"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load app version (${response.status})`);
+  }
+
+  const payload = await response.json();
+  if (!payload || typeof payload.appVersion !== "string" || !payload.appVersion.trim()) {
+    throw new Error("Invalid app version response");
+  }
+
+  return payload.appVersion.trim();
+}
+
 function setAboutModalOpen(isOpen) {
   if (!elements.aboutModal) {
     return;
@@ -116,8 +144,16 @@ function setAboutModalOpen(isOpen) {
   elements.aboutModal.hidden = !isOpen;
 }
 
-function handleAbout() {
+async function handleAbout() {
+  setAboutVersionText("Loading...");
   setAboutModalOpen(true);
+
+  try {
+    const appVersion = await fetchAppVersion();
+    setAboutVersionText(appVersion);
+  } catch (_error) {
+    setAboutVersionText("Unavailable");
+  }
 }
 
 function syncProfileControlAvailability() {
