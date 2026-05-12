@@ -54,7 +54,6 @@
           </select>
           <div class="profile-actions">
             <button id="saveProfileBtn" class="btn accent btn-icon" title="Save new profile" data-i18n-attr="title:profiles.saveNewProfile">💾</button>
-            <button id="updateProfileBtn" class="btn btn-icon" title="Update selected profile" data-i18n-attr="title:profiles.updateSelectedProfile">↻</button>
             <button id="loadProfileBtn" class="btn btn-icon" title="Load selected profile" data-i18n-attr="title:profiles.loadSelectedProfile">↓</button>
             <button id="deleteProfileBtn" class="btn danger btn-icon" title="Delete selected profile" data-i18n-attr="title:profiles.deleteSelectedProfile">✕</button>
           </div>
@@ -121,7 +120,13 @@
       </section>
 
       <details class="panel aircraft-setup">
-        <summary data-i18n="setup.title">Aircraft Setup</summary>
+        <summary>
+          <span class="aircraft-setup-title" data-i18n="setup.title">Aircraft Setup</span>
+          <label class="setup-toggle" for="aircraftSetupToggle" aria-label="Aircraft setup toggle">
+            <input id="aircraftSetupToggle" type="checkbox" />
+            <span class="setup-toggle-track" aria-hidden="true"></span>
+          </label>
+        </summary>
         <div class="grid-fields">
           <label><span data-i18n="setup.emptyWeight">Empty Weight (kg)</span><input id="emptyWeight" type="number" step="0.1" value="380" /></label>
           <label><span data-i18n="setup.emptyArm">Empty Arm (mm)</span><input id="emptyArm" type="number" step="1" value="480" /></label>

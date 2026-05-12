@@ -23,7 +23,6 @@ const elements = {
   profileName: document.querySelector("#profileName"),
   profileSelect: document.querySelector("#profileSelect"),
   saveProfileBtn: document.querySelector("#saveProfileBtn"),
-  updateProfileBtn: document.querySelector("#updateProfileBtn"),
   loadProfileBtn: document.querySelector("#loadProfileBtn"),
   deleteProfileBtn: document.querySelector("#deleteProfileBtn"),
   statusText: document.querySelector("#statusText"),
@@ -48,7 +47,9 @@ const elements = {
   itemDefinitionsBody: document.querySelector("#itemDefinitionsBody"),
   itemDefinitionRowTemplate: document.querySelector("#itemDefinitionRowTemplate"),
   addItemDefinitionBtn: document.querySelector("#addItemDefinitionBtn"),
-  envelopeCanvas: document.querySelector("#envelopeCanvas")
+  envelopeCanvas: document.querySelector("#envelopeCanvas"),
+  aircraftSetupToggle: document.querySelector("#aircraftSetupToggle"),
+  aircraftSetupPanel: document.querySelector(".aircraft-setup")
 };
 
 const state = {
@@ -175,6 +176,28 @@ function itemWeightsByDefinitionIdFromForm() {
   return weightMap;
 }
 
+function setAircraftSetupEditable(isEditable) {
+  if (!elements.aircraftSetupPanel) {
+    return;
+  }
+
+  const shouldDisable = !isEditable;
+  const controls = elements.aircraftSetupPanel.querySelectorAll("input, select, textarea, button");
+  controls.forEach((control) => {
+    if (control === elements.aircraftSetupToggle) {
+      return;
+    }
+    control.disabled = shouldDisable;
+  });
+
+  elements.aircraftSetupPanel.classList.toggle("locked", shouldDisable);
+  elements.aircraftSetupPanel.setAttribute("aria-disabled", String(shouldDisable));
+
+  elements.itemDefinitionsBody.querySelectorAll("tr").forEach((row) => {
+    row.draggable = isEditable;
+  });
+}
+
 function combinedItemsFromForm() {
   const definitions = itemDefinitionsFromForm();
   const weightMap = itemWeightsByDefinitionIdFromForm();
@@ -223,6 +246,8 @@ function renderItemRows(definitions, existingWeights = new Map()) {
       elements.itemsBody.appendChild(row);
     }
   });
+
+  setAircraftSetupEditable(elements.aircraftSetupToggle ? elements.aircraftSetupToggle.checked : true);
 }
 
 function syncItemsFromDefinitions() {
@@ -305,6 +330,7 @@ function addItemDefinitionRow(item = { name: "", arm: 0, weightFactor: 1, perman
   });
 
   elements.itemDefinitionsBody.appendChild(row);
+  setAircraftSetupEditable(elements.aircraftSetupToggle ? elements.aircraftSetupToggle.checked : true);
 }
 
 function writeProfileToForm(profile) {
@@ -621,10 +647,18 @@ function recalculateAndRender() {
   drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPercent);
 }
 
-async function saveNewProfile() {
+async function saveProfile() {
   const payload = profilePayload();
   if (!payload.name) {
     setStatus(t("status.enterProfileNameBeforeSaving"), true);
+    return;
+  }
+
+  if (state.selectedProfileId) {
+    const updated = await updateProfile(state.selectedProfileId, payload);
+    await refreshProfiles();
+    elements.profileSelect.value = state.selectedProfileId;
+    setStatus(t("status.updatedProfile", { name: updated.name }));
     return;
   }
 
@@ -633,24 +667,6 @@ async function saveNewProfile() {
   await refreshProfiles();
   elements.profileSelect.value = state.selectedProfileId;
   setStatus(t("status.savedProfile", { name: saved.name }));
-}
-
-async function updateCurrentProfile() {
-  if (!state.selectedProfileId) {
-    setStatus(t("status.selectAndLoadBeforeUpdating"), true);
-    return;
-  }
-
-  const payload = profilePayload();
-  if (!payload.name) {
-    setStatus(t("status.profileNameEmpty"), true);
-    return;
-  }
-
-  const updated = await updateProfile(state.selectedProfileId, payload);
-  await refreshProfiles();
-  elements.profileSelect.value = state.selectedProfileId;
-  setStatus(t("status.updatedProfile", { name: updated.name }));
 }
 
 async function loadSelectedProfile() {
@@ -722,16 +738,26 @@ function bindEvents() {
     input.addEventListener("input", recalculateAndRender);
   });
 
-  elements.saveProfileBtn.addEventListener("click", () => runAction(saveNewProfile));
-  elements.updateProfileBtn.addEventListener("click", () => runAction(updateCurrentProfile));
+  elements.saveProfileBtn.addEventListener("click", () => runAction(saveProfile));
   elements.loadProfileBtn.addEventListener("click", () => runAction(loadSelectedProfile));
   elements.deleteProfileBtn.addEventListener("click", () => runAction(removeSelectedProfile));
   elements.localeEnBtn.addEventListener("click", () => runAction(() => switchLocale("en")));
   elements.localeFrBtn.addEventListener("click", () => runAction(() => switchLocale("fr")));
   elements.profileSelect.addEventListener("change", () => {
-    state.selectedProfileId = elements.profileSelect.value;
+    if (elements.profileSelect.value !== state.selectedProfileId) {
+      state.selectedProfileId = "";
+    }
     updateProfileDeleteAvailability();
   });
+
+  if (elements.aircraftSetupToggle) {
+    const stopSummaryToggle = (event) => event.stopPropagation();
+    elements.aircraftSetupToggle.addEventListener("click", stopSummaryToggle);
+    elements.aircraftSetupToggle.addEventListener("keydown", stopSummaryToggle);
+    elements.aircraftSetupToggle.addEventListener("change", () => {
+      setAircraftSetupEditable(elements.aircraftSetupToggle.checked);
+    });
+  }
 }
 
 async function init() {
@@ -740,6 +766,10 @@ async function init() {
   updateLocaleButtons();
 
   bindEvents();
+
+  if (elements.aircraftSetupToggle) {
+    setAircraftSetupEditable(elements.aircraftSetupToggle.checked);
+  }
 
   const defaultDefinitions = [
     { name: t("defaults.pilot"), arm: 420, weightFactor: 1, permanent: false },

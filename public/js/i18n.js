@@ -228,8 +228,8 @@ const resources = {
 export async function initI18n() {
   await window.i18next.init({
     resources,
-    lng: "fr",
-    fallbackLng: "fr",
+    lng: "en",
+    fallbackLng: "en",
     interpolation: {
       escapeValue: false
     }
