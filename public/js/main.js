@@ -90,6 +90,20 @@ function setStatus(message, isError = false) {
   elements.statusText.style.color = isError ? "#a4161a" : "#6a5850";
 }
 
+function syncProfileControlAvailability() {
+  const canManageProfiles = state.authEnabled && Boolean(state.authenticatedUser);
+  const hasProfiles = state.profiles.length > 0;
+  const hasSelection = Boolean(elements.profileSelect && elements.profileSelect.value);
+
+  elements.saveProfileBtn.disabled = !canManageProfiles;
+  if (elements.updateProfileBtn) {
+    elements.updateProfileBtn.disabled = !canManageProfiles;
+  }
+  elements.loadProfileBtn.disabled = !hasSelection;
+  elements.deleteProfileBtn.disabled = !canManageProfiles;
+  elements.profileSelect.disabled = !hasProfiles;
+}
+
 function updateAuthUi(user) {
   state.authenticatedUser = user || null;
 
@@ -123,19 +137,12 @@ function updateAuthUi(user) {
     elements.signInBtn.setAttribute("aria-label", t("auth.signInWithGoogle"));
   }
 
-  const canManageProfiles = state.authEnabled && Boolean(state.authenticatedUser);
-  elements.saveProfileBtn.disabled = !canManageProfiles;
-  if (elements.updateProfileBtn) {
-    elements.updateProfileBtn.disabled = !canManageProfiles;
-  }
-  elements.loadProfileBtn.disabled = !canManageProfiles;
-  elements.deleteProfileBtn.disabled = !canManageProfiles;
-  elements.profileSelect.disabled = !canManageProfiles;
-
-  if (!canManageProfiles) {
+  if (!(state.authEnabled && Boolean(state.authenticatedUser))) {
     state.selectedProfileId = "";
     elements.profileSelect.value = "";
   }
+
+  syncProfileControlAvailability();
 }
 
 function updateLocaleButtons() {
@@ -456,7 +463,12 @@ function writeProfileToForm(profile) {
 }
 
 function renderProfileSelect(profiles) {
+  if (!elements.profileSelect) {
+    return;
+  }
+
   state.profiles = Array.isArray(profiles) ? profiles : [];
+
   const initialOption = `<option value="">${t("profiles.selectSavedProfile")}</option>`;
   const options = state.profiles
     .map((profile) => {
@@ -471,6 +483,7 @@ function renderProfileSelect(profiles) {
     elements.profileSelect.value = state.selectedProfileId;
   }
 
+  syncProfileControlAvailability();
   updateProfileDeleteAvailability();
 }
 
@@ -494,13 +507,12 @@ function updateProfileDeleteAvailability() {
 }
 
 async function refreshProfiles() {
-  if (!state.authEnabled || !state.authenticatedUser) {
+  try {
+    const profiles = await listProfiles();
+    renderProfileSelect(Array.isArray(profiles) ? profiles : []);
+  } catch (error) {
     renderProfileSelect([]);
-    return;
   }
-
-  const profiles = await listProfiles();
-  renderProfileSelect(profiles || []);
 }
 
 async function handleSignInButtonClick() {
@@ -749,6 +761,7 @@ async function saveProfile() {
 
   if (state.selectedProfileId) {
     const updated = await updateProfile(state.selectedProfileId, payload);
+    state.selectedProfileId = updated.id;
     await refreshProfiles();
     elements.profileSelect.value = state.selectedProfileId;
     setStatus(t("status.updatedProfile", { name: updated.name }));
@@ -841,6 +854,7 @@ function bindEvents() {
     if (elements.profileSelect.value !== state.selectedProfileId) {
       state.selectedProfileId = "";
     }
+    syncProfileControlAvailability();
     updateProfileDeleteAvailability();
   });
 

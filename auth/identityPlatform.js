@@ -118,7 +118,41 @@ async function requireAuth(req, res, next) {
   }
 }
 
+async function tryGetAuthUser(req, res, next) {
+  const authHeader = req.headers.authorization || "";
+  if (!authHeader.startsWith("Bearer ")) {
+    // No auth header, continue without user
+    next();
+    return;
+  }
+
+  const token = authHeader.slice("Bearer ".length).trim();
+  if (!token) {
+    // Empty token, continue without user
+    next();
+    return;
+  }
+
+  try {
+    ensureIdentityPlatform();
+    req.user = await admin.auth().verifyIdToken(token);
+    console.log("Authenticated user", {
+      uid: req.user.uid,
+      email: req.user.email || null,
+      name: req.user.name || null,
+      provider: req.user.firebase && req.user.firebase.sign_in_provider ? req.user.firebase.sign_in_provider : null,
+      authTime: req.user.auth_time || null
+    });
+  } catch (error) {
+    // Token verification failed, but we don't error out - just continue without user
+    console.warn("Token verification failed (optional auth)", error.message || error);
+  }
+
+  next();
+}
+
 module.exports = {
   getWebAuthConfig,
-  requireAuth
+  requireAuth,
+  tryGetAuthUser
 };

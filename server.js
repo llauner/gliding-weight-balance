@@ -1,7 +1,8 @@
 const express = require("express");
 const fs = require("fs/promises");
 const path = require("path");
-const { getWebAuthConfig, requireAuth } = require("./auth/identityPlatform");
+const { getWebAuthConfig, requireAuth, tryGetAuthUser } = require("./auth/identityPlatform");
+const firestore = require("./db/firestore");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,7 +37,8 @@ app.get("/api/auth/config", (_req, res) => {
   res.json({ enabled: true, config });
 });
 
-app.use("/api/profiles", requireAuth);
+// Optional auth middleware - attaches user if authenticated, but doesn't require it
+const optionalAuth = tryGetAuthUser;
 
 async function ensureProfilesStore() {
   try {
@@ -155,108 +157,142 @@ function normalizeProfile(payload) {
   };
 }
 
-app.get("/api/profiles", async (_req, res) => {
-  const profiles = await readProfiles();
-  const summary = profiles.map((profile) => ({
-    id: profile.id,
-    name: profile.name,
-    updatedAt: profile.updatedAt,
-    isDefault: Boolean(profile.isDefault)
-  }));
+app.get("/api/profiles", optionalAuth, async (req, res) => {
+  try {
+    let profiles;
 
-  res.json(summary);
+    if (req.user) {
+      // Authenticated: get profiles from Firestore
+      profiles = await firestore.listProfilesByUserId(req.user.email);
+    } else {
+      // Unauthenticated: get default profiles from JSON
+      profiles = await readProfiles();
+    }
+
+    const summary = profiles.map((profile) => ({
+      id: profile.id,
+      name: profile.name,
+      updatedAt: profile.updatedAt,
+      isDefault: Boolean(profile.isDefault)
+    }));
+
+    res.json(summary);
+  } catch (error) {
+    console.error("Error listing profiles:", error);
+    res.status(500).json({ message: "Failed to list profiles" });
+  }
 });
 
-app.get("/api/profiles/:id", async (req, res) => {
-  const profiles = await readProfiles();
-  const profile = profiles.find((item) => item.id === req.params.id);
+app.get("/api/profiles/:id", optionalAuth, async (req, res) => {
+  try {
+    let profile;
 
-  if (!profile) {
-    res.status(404).json({ message: "Profile not found" });
-    return;
+    if (req.user) {
+      // Authenticated: get from Firestore
+      profile = await firestore.getProfileById(req.params.id, req.user.email);
+      if (!profile) {
+        res.status(404).json({ message: "Profile not found" });
+        return;
+      }
+    } else {
+      // Unauthenticated: get from JSON
+      const profiles = await readProfiles();
+      profile = profiles.find((item) => item.id === req.params.id);
+      if (!profile) {
+        res.status(404).json({ message: "Profile not found" });
+        return;
+      }
+    }
+
+    res.json(profile);
+  } catch (error) {
+    console.error("Error getting profile:", error);
+    res.status(500).json({ message: "Failed to get profile" });
   }
-
-  res.json(profile);
 });
 
-app.post("/api/profiles", async (req, res) => {
-  const payload = req.body || {};
+app.post("/api/profiles", requireAuth, async (req, res) => {
+  try {
+    const payload = req.body || {};
 
-  if (!payload.name) {
-    res.status(400).json({ message: "Profile name is required" });
-    return;
+    if (!payload.name) {
+      res.status(400).json({ message: "Profile name is required" });
+      return;
+    }
+
+    const normalized = normalizeProfile(payload);
+    const profile = await firestore.createProfile(normalized, req.user.email);
+
+    res.status(201).json(profile);
+  } catch (error) {
+    if (error && error.code === "PROFILE_EXISTS") {
+      res.status(409).json({ message: "Profile already exists" });
+      return;
+    }
+
+    console.error("Error creating profile:", error);
+    res.status(500).json({ message: "Failed to create profile" });
   }
-
-  const profiles = await readProfiles();
-  const now = new Date().toISOString();
-  const profile = {
-    id: `profile_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    createdAt: now,
-    updatedAt: now,
-    ...normalizeProfile(payload)
-  };
-
-  profiles.push(profile);
-  await writeProfiles(profiles);
-
-  res.status(201).json(profile);
 });
 
-app.put("/api/profiles/:id", async (req, res) => {
-  const profiles = await readProfiles();
-  const index = profiles.findIndex((item) => item.id === req.params.id);
+app.put("/api/profiles/:id", requireAuth, async (req, res) => {
+  try {
+    const normalized = normalizeProfile(req.body || {});
+    const profile = await firestore.updateProfile(req.params.id, normalized, req.user.email);
 
-  if (index === -1) {
-    res.status(404).json({ message: "Profile not found" });
-    return;
+    if (!profile) {
+      res.status(404).json({ message: "Profile not found" });
+      return;
+    }
+
+    res.json(profile);
+  } catch (error) {
+    if (error && error.code === "PROFILE_EXISTS") {
+      res.status(409).json({ message: "Profile already exists" });
+      return;
+    }
+
+    console.error("Error updating profile:", error);
+    res.status(500).json({ message: "Failed to update profile" });
   }
-
-  const current = profiles[index];
-  const updated = {
-    ...current,
-    ...normalizeProfile(req.body || {}),
-    id: current.id,
-    createdAt: current.createdAt,
-    updatedAt: new Date().toISOString()
-  };
-
-  profiles[index] = updated;
-  await writeProfiles(profiles);
-
-  res.json(updated);
 });
 
-app.delete("/api/profiles/:id", async (req, res) => {
-  const profiles = await readProfiles();
-  const profileToDelete = profiles.find((item) => item.id === req.params.id);
+app.delete("/api/profiles/:id", requireAuth, async (req, res) => {
+  try {
+    const success = await firestore.deleteProfile(req.params.id, req.user.email);
 
-  if (!profileToDelete) {
-    res.status(404).json({ message: "Profile not found" });
-    return;
+    if (!success) {
+      res.status(404).json({ message: "Profile not found or cannot be deleted" });
+      return;
+    }
+
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting profile:", error);
+    res.status(500).json({ message: "Failed to delete profile" });
   }
-
-  if (profileToDelete.isDefault || isDefaultProfileName(profileToDelete.name)) {
-    res.status(403).json({ message: "Default profile cannot be deleted" });
-    return;
-  }
-
-  const nextProfiles = profiles.filter((item) => item.id !== req.params.id);
-
-  await writeProfiles(nextProfiles);
-  res.status(204).send();
 });
 
 app.get(/^\/(?!api).*/, (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-ensureProfilesStore()
+async function initializeServices() {
+  // Initialize JSON profile store
+  await ensureProfilesStore();
+
+  // Initialize Firestore
+  firestore.initializeFirestore();
+  console.log("Firestore initialized");
+}
+
+initializeServices()
   .then(() => {
     app.listen(PORT, () => {
       console.log(`Gliding weight and balance server listening on http://localhost:${PORT}`);
     });
   })
   .catch((error) => {
-    console.error("Failed to initialize profile store", error);
+    console.error("Failed to initialize services", error);
     process.exit(1);
   });
