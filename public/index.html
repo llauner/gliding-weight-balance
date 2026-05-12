@@ -41,6 +41,16 @@
                   <rect x="40" y="0" width="20" height="40" fill="#ED2939"/>
                 </svg>
               </button>
+              <button id="menuBtn" class="btn btn-icon menu-btn" type="button" title="Menu" aria-label="Menu">
+                <svg width="18" height="14" viewBox="0 0 18 14" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" focusable="false">
+                  <path d="M1 1h16M1 7h16M1 13h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <div id="menuDropdown" class="menu-dropdown" hidden>
+                <button id="menuCreateQrBtn" class="menu-item" type="button" data-i18n="menu.createQrCode">Create QR Code</button>
+                <div class="menu-separator" role="separator" aria-hidden="true"></div>
+                <button id="menuAboutBtn" class="menu-item" type="button" data-i18n="menu.about">About</button>
+              </div>
             </div>
             <div class="auth-row">
               <span id="authUserText" class="auth-user-text" aria-live="polite"></span>
@@ -190,6 +200,22 @@
         </td>
       </tr>
     </template>
+
+    <div id="aboutModal" class="modal-backdrop" hidden>
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="aboutModalTitle">
+        <h3 id="aboutModalTitle">About</h3>
+        <h4>Homepage</h4>
+        <p><a href="https://github.com/llauner/gliding-weight-balance" target="_blank" rel="noopener noreferrer">https://github.com/llauner/gliding-weight-balance</a></p>
+        <h4>License summary</h4>
+        <p>This software is source-available.</p>
+        <p>Use is permitted for private, educational, or non-commercial purposes only.</p>
+        <p>Attribution to the original project is mandatory.</p>
+        <p>Commercial use, redistribution, or derivative works require explicit written permission.</p>
+        <div class="modal-actions">
+          <button id="aboutModalOkBtn" class="btn" type="button">OK</button>
+        </div>
+      </div>
+    </div>
 
     <script src="https://unpkg.com/i18next@23.16.4/dist/umd/i18next.min.js"></script>
     <script type="module" src="/js/main.js"></script>

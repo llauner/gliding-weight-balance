@@ -14,6 +14,12 @@ const resources = {
         english: "English",
         french: "French"
       },
+      menu: {
+        createQrCode: "Create QR Code",
+        about: "About",
+        createQrCodeComingSoon: "Create QR Code coming soon.",
+        aboutComingSoon: "About coming soon."
+      },
       auth: {
         signInWithGoogle: "Sign in with Google",
         signOut: "Sign out",
@@ -134,6 +140,12 @@ const resources = {
         selectorLabel: "Selecteur de langue",
         english: "Anglais",
         french: "Francais"
+      },
+      menu: {
+        createQrCode: "Creer le code QR",
+        about: "A Propos",
+        createQrCodeComingSoon: "Creation du code QR bientot disponible.",
+        aboutComingSoon: "A Propos bientot disponible."
       },
       auth: {
         signInWithGoogle: "Se connecter avec Google",

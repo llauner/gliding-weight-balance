@@ -51,6 +51,12 @@ const elements = {
   maxWaterBallastValue: document.querySelector("#maxWaterBallastValue"),
   localeEnBtn: document.querySelector("#localeEnBtn"),
   localeFrBtn: document.querySelector("#localeFrBtn"),
+  menuBtn: document.querySelector("#menuBtn"),
+  menuDropdown: document.querySelector("#menuDropdown"),
+  menuCreateQrBtn: document.querySelector("#menuCreateQrBtn"),
+  menuAboutBtn: document.querySelector("#menuAboutBtn"),
+  aboutModal: document.querySelector("#aboutModal"),
+  aboutModalOkBtn: document.querySelector("#aboutModalOkBtn"),
   authUserText: document.querySelector("#authUserText"),
   signInBtn: document.querySelector("#signInBtn"),
   itemsBody: document.querySelector("#itemsBody"),
@@ -87,6 +93,31 @@ function clampWeightFactor(value) {
 function setStatus(message, isError = false) {
   elements.statusText.textContent = message;
   elements.statusText.style.color = isError ? "#a4161a" : "#6a5850";
+}
+
+function setMenuOpen(isOpen) {
+  if (!elements.menuBtn || !elements.menuDropdown) {
+    return;
+  }
+
+  elements.menuDropdown.hidden = !isOpen;
+  elements.menuBtn.setAttribute("aria-expanded", String(isOpen));
+}
+
+function handleCreateQrCode() {
+  setStatus(t("menu.createQrCodeComingSoon"));
+}
+
+function setAboutModalOpen(isOpen) {
+  if (!elements.aboutModal) {
+    return;
+  }
+
+  elements.aboutModal.hidden = !isOpen;
+}
+
+function handleAbout() {
+  setAboutModalOpen(true);
 }
 
 function syncProfileControlAvailability() {
@@ -856,6 +887,57 @@ function bindEvents() {
 
     runAction(loadSelectedProfile);
   });
+
+  if (elements.menuBtn && elements.menuDropdown) {
+    elements.menuBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const isOpen = elements.menuDropdown.hidden;
+      setMenuOpen(isOpen);
+    });
+
+    elements.menuDropdown.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    document.addEventListener("click", () => {
+      setMenuOpen(false);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        setAboutModalOpen(false);
+      }
+    });
+  }
+
+  if (elements.menuCreateQrBtn) {
+    elements.menuCreateQrBtn.addEventListener("click", () => {
+      setMenuOpen(false);
+      runAction(handleCreateQrCode);
+    });
+  }
+
+  if (elements.menuAboutBtn) {
+    elements.menuAboutBtn.addEventListener("click", () => {
+      setMenuOpen(false);
+      runAction(handleAbout);
+    });
+  }
+
+  if (elements.aboutModalOkBtn) {
+    elements.aboutModalOkBtn.addEventListener("click", () => {
+      setAboutModalOpen(false);
+    });
+  }
+
+  if (elements.aboutModal) {
+    elements.aboutModal.addEventListener("click", (event) => {
+      if (event.target === elements.aboutModal) {
+        setAboutModalOpen(false);
+      }
+    });
+  }
 
   if (elements.aircraftSetupToggle) {
     const stopSummaryToggle = (event) => event.stopPropagation();
