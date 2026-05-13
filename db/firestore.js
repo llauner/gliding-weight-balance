@@ -215,6 +215,28 @@ async function updateProfile(docId, profileData, userId) {
   };
 }
 
+async function getPublicProfileById(docId) {
+  initializeFirestore();
+
+  const db = getDb();
+  const doc = await db.collection(COLLECTION_NAME).doc(docId).get();
+
+  if (!doc.exists) {
+    return null;
+  }
+
+  const data = doc.data();
+
+  if (!data.isPublic) {
+    return null;
+  }
+
+  return {
+    id: doc.id,
+    ...data
+  };
+}
+
 async function deleteProfile(docId, userId) {
   initializeFirestore();
 
@@ -245,6 +267,7 @@ async function deleteProfile(docId, userId) {
 module.exports = {
   listProfilesByUserId,
   getProfileById,
+  getPublicProfileById,
   createProfile,
   updateProfile,
   deleteProfile,

@@ -302,6 +302,19 @@ body {
   flex-wrap: nowrap;
 }
 
+.public-profile-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.public-profile-toggle input {
+  margin: 0;
+}
+
 #saveProfileBtn {
   margin-left: 0;
 }

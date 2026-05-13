@@ -32,6 +32,7 @@ const resources = {
       profiles: {
         title: "Profiles",
         profileNamePlaceholder: "Profile name",
+        publicProfile: "Public profile",
         selectSavedProfile: "Select a saved profile",
         saveNewProfile: "Save new profile",
         updateSelectedProfile: "Update selected profile",
@@ -95,7 +96,9 @@ const resources = {
         chooseProfileToDelete: "Choose a profile to delete.",
         defaultCannotDelete: "Default profile cannot be deleted.",
         profileDeleted: "Profile deleted.",
-        unableToLoadProfiles: "Unable to load profiles: {{message}}"
+        unableToLoadProfiles: "Unable to load profiles: {{message}}",
+        loadedPublicProfile: "Loaded shared profile '{{name}}'.",
+        publicProfileNotFound: "Shared profile not found or not public."
       },
       error: {
         unexpected: "Unexpected error",
@@ -160,6 +163,7 @@ const resources = {
       profiles: {
         title: "Profils",
         profileNamePlaceholder: "Nom du profil",
+        publicProfile: "Profil public",
         selectSavedProfile: "Selection profil enregistre",
         saveNewProfile: "Enregistrer un nouveau profil",
         updateSelectedProfile: "Mettre a jour le profil selectionne",
@@ -223,7 +227,9 @@ const resources = {
         chooseProfileToDelete: "Choisissez un profil a supprimer.",
         defaultCannotDelete: "Le profil par déaut ne peut pas etre supprime.",
         profileDeleted: "Profil supprime.",
-        unableToLoadProfiles: "Impossible de charger les profils : {{message}}"
+        unableToLoadProfiles: "Impossible de charger les profils : {{message}}",
+        loadedPublicProfile: "Profil partage '{{name}}' charge.",
+        publicProfileNotFound: "Profil partage introuvable ou non public."
       },
       error: {
         unexpected: "Erreur inattendue",

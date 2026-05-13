@@ -196,6 +196,7 @@ function normalizeProfile(payload) {
   return {
     name: normalizedName,
     isDefault: isDefaultProfileName(normalizedName),
+    isPublic: Boolean(payload.isPublic),
     aircraft: {
       emptyWeight: Number(aircraft.emptyWeight) || 0,
       emptyArm: Number(aircraft.emptyArm) || 0,
@@ -264,6 +265,20 @@ app.get("/api/profiles/:id", optionalAuth, async (req, res) => {
   } catch (error) {
     console.error("Error getting profile:", error);
     res.status(500).json({ message: "Failed to get profile" });
+  }
+});
+
+app.get("/api/profiles/:id/public", async (req, res) => {
+  try {
+    const profile = await firestore.getPublicProfileById(req.params.id);
+    if (!profile) {
+      res.status(404).json({ message: "Public profile not found" });
+      return;
+    }
+    res.json(profile);
+  } catch (error) {
+    console.error("Error getting public profile:", error);
+    res.status(500).json({ message: "Failed to get public profile" });
   }
 });
 

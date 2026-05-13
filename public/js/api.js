@@ -43,6 +43,11 @@ export async function getProfile(id) {
   return parseResponse(response);
 }
 
+export async function getPublicProfile(id) {
+  const response = await fetch(`/api/profiles/${encodeURIComponent(id)}/public`);
+  return parseResponse(response);
+}
+
 export async function createProfile(payload) {
   const response = await fetch("/api/profiles", {
     method: "POST",

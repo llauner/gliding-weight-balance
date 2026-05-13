@@ -29,9 +29,11 @@ import {
   t
 } from "./i18n.js";
 import { forceUpdateServiceWorker, registerServiceWorker } from "./sw-update.js";
+import { getPublicProfile } from "./api.js";
 
 const elements = {
   profileName: document.querySelector("#profileName"),
+  profileIsPublic: document.querySelector("#profileIsPublic"),
   profileSelect: document.querySelector("#profileSelect"),
   saveProfileBtn: document.querySelector("#saveProfileBtn"),
   updateProfileBtn: document.querySelector("#updateProfileBtn"),
@@ -169,6 +171,9 @@ function syncProfileControlAvailability() {
   const hasProfiles = state.profiles.length > 0;
 
   elements.saveProfileBtn.disabled = !canManageProfiles;
+  if (elements.profileIsPublic) {
+    elements.profileIsPublic.disabled = !canManageProfiles;
+  }
   if (elements.updateProfileBtn) {
     elements.updateProfileBtn.disabled = !canManageProfiles;
   }
@@ -424,6 +429,7 @@ function handleItemDefinitionDragOver(event) {
 function profilePayload() {
   return {
     name: elements.profileName.value.trim(),
+    isPublic: Boolean(elements.profileIsPublic && elements.profileIsPublic.checked),
     aircraft: aircraftFromForm(),
     items: itemsFromForm()
   };
@@ -478,6 +484,9 @@ function addItemDefinitionRow(item = { name: "", arm: 0, weightFactor: 1, perman
 
 function writeProfileToForm(profile) {
   elements.profileName.value = profile.name || "";
+  if (elements.profileIsPublic) {
+    elements.profileIsPublic.checked = Boolean(profile.isPublic);
+  }
 
   const fallbackDefinitions = [
     { name: t("defaults.pilot"), arm: 420, weightFactor: 1, permanent: false, waterBallast: false },
@@ -1050,6 +1059,18 @@ async function init() {
     await refreshProfiles();
   } catch (error) {
     setStatus(t("status.unableToLoadProfiles", { message: localizeApiErrorMessage(error.message) }), true);
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const sharedProfileId = urlParams.get("profileId");
+  if (sharedProfileId) {
+    try {
+      const profile = await getPublicProfile(sharedProfileId);
+      writeProfileToForm(profile);
+      setStatus(t("status.loadedPublicProfile", { name: profile.name }));
+    } catch (_err) {
+      setStatus(t("status.publicProfileNotFound"), true);
+    }
   }
 }
 
