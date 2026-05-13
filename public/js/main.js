@@ -79,7 +79,9 @@ const state = {
   selectedProfileId: "",
   profiles: [],
   authenticatedUser: null,
-  authEnabled: false
+  authEnabled: false,
+  viewingSharedProfile: false,
+  loadedProfileUserId: null
 };
 
 function createId(prefix) {
@@ -166,8 +168,20 @@ async function handleAbout() {
   }
 }
 
+function isViewingOthersProfile() {
+  if (!state.viewingSharedProfile) {
+    return false;
+  }
+  // Allow editing if the authenticated user is the owner of the loaded profile
+  if (state.authenticatedUser && state.loadedProfileUserId &&
+      state.loadedProfileUserId === state.authenticatedUser.email) {
+    return false;
+  }
+  return true;
+}
+
 function syncProfileControlAvailability() {
-  const canManageProfiles = state.authEnabled && Boolean(state.authenticatedUser);
+  const canManageProfiles = state.authEnabled && Boolean(state.authenticatedUser) && !isViewingOthersProfile();
   const hasProfiles = state.profiles.length > 0;
 
   elements.saveProfileBtn.disabled = !canManageProfiles;
@@ -865,8 +879,11 @@ async function loadSelectedProfile() {
 
   const profile = await getProfile(id);
   state.selectedProfileId = id;
+  state.viewingSharedProfile = false;
+  state.loadedProfileUserId = null;
   writeProfileToForm(profile);
   updateProfileDeleteAvailability();
+  syncProfileControlAvailability();
   setStatus(t("status.loadedProfile", { name: profile.name }));
 }
 
@@ -1066,7 +1083,10 @@ async function init() {
   if (sharedProfileId) {
     try {
       const profile = await getPublicProfile(sharedProfileId);
+      state.viewingSharedProfile = true;
+      state.loadedProfileUserId = profile.userId || null;
       writeProfileToForm(profile);
+      syncProfileControlAvailability();
       setStatus(t("status.loadedPublicProfile", { name: profile.name }));
     } catch (_err) {
       setStatus(t("status.publicProfileNotFound"), true);
