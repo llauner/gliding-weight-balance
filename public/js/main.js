@@ -6,6 +6,7 @@ import {
 import {
   createProfile,
   deleteProfile,
+  downloadProfileQrCode,
   getProfile,
   listProfiles,
   setAuthTokenGetter,
@@ -84,7 +85,9 @@ const state = {
   authenticatedUser: null,
   authEnabled: false,
   viewingSharedProfile: false,
-  loadedProfileUserId: null
+  loadedProfileUserId: null,
+  loadedProfileName: "",
+  loadedProfileIsDefault: false
 };
 
 function createId(prefix) {
@@ -120,6 +123,27 @@ function setMenuOpen(isOpen) {
   elements.menuBtn.setAttribute("aria-expanded", String(isOpen));
 }
 
+function updateCreateQrMenuAvailability() {
+  if (!elements.menuCreateQrBtn) {
+    return;
+  }
+
+  const hasSelectedProfile = Boolean(elements.profileSelect && elements.profileSelect.value);
+  const isPublicProfile = Boolean(elements.profileIsPublic && elements.profileIsPublic.checked);
+  const canCreateQr = hasSelectedProfile && isPublicProfile;
+
+  elements.menuCreateQrBtn.disabled = !canCreateQr;
+  elements.menuCreateQrBtn.setAttribute("aria-disabled", String(!canCreateQr));
+
+  if (!hasSelectedProfile) {
+    elements.menuCreateQrBtn.title = t("status.chooseProfileToLoad");
+  } else if (!isPublicProfile) {
+    elements.menuCreateQrBtn.title = t("status.profileMustBePublicForQr");
+  } else {
+    elements.menuCreateQrBtn.title = t("menu.createQrCode");
+  }
+}
+
 function setLanguageDropdownOpen(isOpen) {
   if (!elements.languageDropdownBtn || !elements.languageDropdownMenu) {
     return;
@@ -130,7 +154,33 @@ function setLanguageDropdownOpen(isOpen) {
 }
 
 function handleCreateQrCode() {
-  setStatus(t("menu.createQrCodeComingSoon"));
+  const selectedId = elements.profileSelect ? elements.profileSelect.value : "";
+  if (!selectedId) {
+    setStatus(t("status.chooseProfileToLoad"), true);
+    return;
+  }
+
+  if (!(elements.profileIsPublic && elements.profileIsPublic.checked)) {
+    setStatus(t("status.profileMustBePublicForQr"), true);
+    return;
+  }
+
+  runAction(async () => {
+    const { blob, fileName } = await downloadProfileQrCode(selectedId);
+    const objectUrl = URL.createObjectURL(blob);
+
+    try {
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setStatus(t("status.qrCodeDownloaded", { fileName }));
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  });
 }
 
 function setAboutVersionText(value) {
@@ -205,6 +255,7 @@ function syncProfileControlAvailability() {
   }
   elements.deleteProfileBtn.disabled = !canManageProfiles;
   elements.profileSelect.disabled = !hasProfiles;
+  updateCreateQrMenuAvailability();
 }
 
 function updateAuthUi(user) {
@@ -587,6 +638,7 @@ function writeProfileToForm(profile) {
   }
 
   recalculateAndRender();
+  updateCreateQrMenuAvailability();
 }
 
 function renderProfileSelect(profiles) {
@@ -596,8 +648,17 @@ function renderProfileSelect(profiles) {
 
   state.profiles = Array.isArray(profiles) ? profiles : [];
 
+  const selectableProfiles = [...state.profiles];
+  if (state.selectedProfileId && !selectableProfiles.some((profile) => profile.id === state.selectedProfileId)) {
+    selectableProfiles.push({
+      id: state.selectedProfileId,
+      name: state.loadedProfileName || state.selectedProfileId,
+      isDefault: Boolean(state.loadedProfileIsDefault)
+    });
+  }
+
   const initialOption = `<option value="">${t("profiles.selectSavedProfile")}</option>`;
-  const options = state.profiles
+  const options = selectableProfiles
     .map((profile) => {
       const suffix = profile.isDefault ? ` ${t("profiles.defaultSuffix")}` : "";
       return `<option value="${profile.id}">${profile.name}${suffix}</option>`;
@@ -612,10 +673,15 @@ function renderProfileSelect(profiles) {
 
   syncProfileControlAvailability();
   updateProfileDeleteAvailability();
+  updateCreateQrMenuAvailability();
 }
 
 function selectedProfileSummary() {
   return state.profiles.find((profile) => profile.id === elements.profileSelect.value) || null;
+}
+
+function sharedProfileIdFromQuery() {
+  return new URLSearchParams(window.location.search).get("profileId") || "";
 }
 
 function updateProfileDeleteAvailability() {
@@ -637,6 +703,29 @@ async function refreshProfiles() {
   try {
     const profiles = await listProfiles();
     renderProfileSelect(Array.isArray(profiles) ? profiles : []);
+
+    const shouldAutoLoadDefault = Boolean(
+      state.authEnabled &&
+      state.authenticatedUser &&
+      !sharedProfileIdFromQuery()
+    );
+
+    if (!shouldAutoLoadDefault) {
+      return;
+    }
+
+    const defaultProfile = state.profiles.find((profile) => profile.isDefault);
+    if (!defaultProfile) {
+      return;
+    }
+
+    if (state.selectedProfileId === defaultProfile.id && !state.viewingSharedProfile) {
+      return;
+    }
+
+    state.selectedProfileId = defaultProfile.id;
+    elements.profileSelect.value = defaultProfile.id;
+    await loadSelectedProfile();
   } catch (error) {
     renderProfileSelect([]);
   }
@@ -913,6 +1002,8 @@ async function loadSelectedProfile() {
   state.selectedProfileId = id;
   state.viewingSharedProfile = false;
   state.loadedProfileUserId = null;
+  state.loadedProfileName = profile.name || "";
+  state.loadedProfileIsDefault = Boolean(profile.isDefault);
   writeProfileToForm(profile);
   updateProfileDeleteAvailability();
   syncProfileControlAvailability();
@@ -935,6 +1026,8 @@ async function removeSelectedProfile() {
   await deleteProfile(id);
   if (state.selectedProfileId === id) {
     state.selectedProfileId = "";
+    state.loadedProfileName = "";
+    state.loadedProfileIsDefault = false;
   }
 
   await refreshProfiles();
@@ -1018,6 +1111,50 @@ function bindEvents() {
     });
   }
 
+  if (elements.menuBtn && elements.menuDropdown) {
+    elements.menuBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      setMenuOpen(elements.menuDropdown.hidden);
+    });
+
+    if (elements.menuCreateQrBtn) {
+      elements.menuCreateQrBtn.addEventListener("click", () => {
+        setMenuOpen(false);
+        handleCreateQrCode();
+      });
+    }
+
+    if (elements.menuAboutBtn) {
+      elements.menuAboutBtn.addEventListener("click", () => {
+        setMenuOpen(false);
+        runAction(handleAbout);
+      });
+    }
+
+    if (elements.menuForceUpdateBtn) {
+      elements.menuForceUpdateBtn.addEventListener("click", () => {
+        setMenuOpen(false);
+        runAction(async () => {
+          await forceUpdateServiceWorker();
+          setStatus(t("menu.forceUpdate"));
+        });
+      });
+    }
+
+    document.addEventListener("click", (event) => {
+      const clickInsideMenu = event.target.closest(".menu");
+      if (!clickInsideMenu) {
+        setMenuOpen(false);
+      }
+    });
+  }
+
+  if (elements.aboutModalOkBtn) {
+    elements.aboutModalOkBtn.addEventListener("click", () => {
+      setAboutModalOpen(false);
+    });
+  }
+
   if (elements.signInBtn) {
     elements.signInBtn.addEventListener("click", () => runAction(handleSignInButtonClick));
   }
@@ -1028,10 +1165,17 @@ function bindEvents() {
       if (!selectedId) {
         state.selectedProfileId = "";
         updateProfileDeleteAvailability();
+        updateCreateQrMenuAvailability();
         return;
       }
 
       runAction(loadSelectedProfile);
+    });
+  }
+
+  if (elements.profileIsPublic) {
+    elements.profileIsPublic.addEventListener("change", () => {
+      updateCreateQrMenuAvailability();
     });
   }
 }
@@ -1086,8 +1230,12 @@ async function init() {
   if (sharedProfileId) {
     try {
       const profile = await getPublicProfile(sharedProfileId);
+      state.selectedProfileId = profile.id || sharedProfileId;
       state.viewingSharedProfile = true;
       state.loadedProfileUserId = profile.userId || null;
+      state.loadedProfileName = profile.name || "";
+      state.loadedProfileIsDefault = Boolean(profile.isDefault);
+      renderProfileSelect(state.profiles);
       writeProfileToForm(profile);
       syncProfileControlAvailability();
       setStatus(t("status.loadedPublicProfile", { name: profile.name }));

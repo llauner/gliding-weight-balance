@@ -76,3 +76,29 @@ export async function deleteProfile(id) {
 
   return parseResponse(response);
 }
+
+export async function downloadProfileQrCode(id) {
+  const response = await fetch(`/api/profiles/${encodeURIComponent(id)}/qrcode`, {
+    headers: await authHeaders()
+  });
+
+  if (!response.ok) {
+    let message = "Request failed";
+    try {
+      const payload = await response.json();
+      if (payload && payload.message) {
+        message = payload.message;
+      }
+    } catch {
+      // Ignore JSON parse failures for binary/non-JSON responses.
+    }
+    throw new Error(message);
+  }
+
+  const blob = await response.blob();
+  const disposition = response.headers.get("content-disposition") || "";
+  const fileNameMatch = disposition.match(/filename="?([^";]+)"?/i);
+  const fileName = fileNameMatch ? fileNameMatch[1] : `profile-${id}-qr.pdf`;
+
+  return { blob, fileName };
+}

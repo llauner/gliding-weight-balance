@@ -1,6 +1,8 @@
 const express = require("express");
 const fs = require("fs/promises");
 const path = require("path");
+const PDFDocument = require("pdfkit");
+const QRCode = require("qrcode");
 const { getWebAuthConfig, requireAuth, tryGetAuthUser } = require("./auth/identityPlatform");
 const firestore = require("./db/firestore");
 
@@ -341,6 +343,86 @@ app.delete("/api/profiles/:id", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Error deleting profile:", error);
     res.status(500).json({ message: "Failed to delete profile" });
+  }
+});
+
+app.get("/api/profiles/:id/qrcode", optionalAuth, async (req, res) => {
+  try {
+    const profileId = String(req.params.id || "").trim();
+    if (!profileId) {
+      res.status(400).json({ message: "Profile id is required" });
+      return;
+    }
+
+    let profile = null;
+    if (req.user) {
+      profile = await firestore.getProfileById(profileId, req.user.email);
+    } else {
+      const profiles = await readProfiles();
+      profile = profiles.find((item) => item.id === profileId) || null;
+    }
+
+    if (!profile) {
+      res.status(404).json({ message: "Profile not found" });
+      return;
+    }
+
+    const isPublic = Boolean(profile.isPublic);
+    if (!isPublic) {
+      res.status(400).json({ message: "Profile must be public before creating a QR code" });
+      return;
+    }
+
+    const profileUrl = `${req.protocol}://${req.get("host")}/?profileId=${encodeURIComponent(profileId)}`;
+    const pngBuffer = await QRCode.toBuffer(profileUrl, {
+      type: "png",
+      errorCorrectionLevel: "M",
+      margin: 2,
+      width: 512
+    });
+
+    const pdfBuffer = await new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ size: "A4", margin: 50 });
+      const chunks = [];
+
+      doc.on("data", (chunk) => chunks.push(chunk));
+      doc.on("end", () => resolve(Buffer.concat(chunks)));
+      doc.on("error", reject);
+
+      const pageWidth = doc.page.width;
+      const contentWidth = pageWidth - doc.page.margins.left - doc.page.margins.right;
+      const title = String(profile.name || "Profile").trim() || "Profile";
+
+      doc.fontSize(20).text(title, doc.page.margins.left, doc.page.margins.top, {
+        width: contentWidth,
+        align: "center"
+      });
+
+      const qrSize = Math.min(320, contentWidth);
+      const qrX = doc.page.margins.left + ((contentWidth - qrSize) / 2);
+      const qrY = doc.y + 24;
+      doc.image(pngBuffer, qrX, qrY, { fit: [qrSize, qrSize] });
+
+      const urlY = qrY + qrSize + 20;
+      doc.fontSize(10).fillColor("#2563eb").text(profileUrl, doc.page.margins.left, urlY, {
+        width: contentWidth,
+        align: "center",
+        link: profileUrl,
+        underline: true
+      });
+
+      doc.end();
+    });
+
+    const safeName = String(profile.name || "profile").replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "profile";
+    const fileName = `${safeName}-qr.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error("Error creating profile QR code:", error);
+    res.status(500).json({ message: "Failed to create QR code" });
   }
 });
 

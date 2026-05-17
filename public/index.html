@@ -63,6 +63,19 @@
             <div class="auth-row">
               <span id="authUserText" class="auth-user-text" aria-live="polite"></span>
               <button id="signInBtn" class="btn btn-icon auth-btn" type="button" title="Sign in with Google" aria-label="Sign in with Google" data-i18n-attr="title:auth.signInWithGoogle;aria-label:auth.signInWithGoogle">🔐</button>
+              <div class="menu">
+                <button id="menuBtn" class="btn btn-icon menu-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menuDropdown" title="Menu" aria-label="Menu">
+                  <svg width="16" height="16" viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
+                    <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                  </svg>
+                </button>
+                <div id="menuDropdown" class="menu-dropdown" hidden>
+                  <button id="menuCreateQrBtn" class="menu-item" type="button" data-i18n="menu.createQrCode">Create QR Code</button>
+                  <button id="menuAboutBtn" class="menu-item" type="button" data-i18n="menu.about">About</button>
+                  <div class="menu-separator"></div>
+                  <button id="menuForceUpdateBtn" class="menu-item" type="button" data-i18n="menu.forceUpdate">Force Update</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

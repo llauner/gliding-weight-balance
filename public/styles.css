@@ -137,6 +137,10 @@ body {
   gap: 0.4rem;
 }
 
+.menu {
+  position: relative;
+}
+
 .auth-user-text {
   flex: 1;
   min-width: 0;
@@ -256,6 +260,16 @@ body {
 
 .menu-item:hover {
   background: rgba(31, 115, 230, 0.08);
+}
+
+.menu-item:disabled {
+  color: var(--text-secondary);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.menu-item:disabled:hover {
+  background: transparent;
 }
 
 .menu-separator {
