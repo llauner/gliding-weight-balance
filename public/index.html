@@ -249,14 +249,16 @@
     <div id="profileSettingsModal" class="modal-backdrop" hidden>
       <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="profileSettingsTitle">
         <h3 id="profileSettingsTitle" data-i18n="profiles.settings">Profile Settings</h3>
-        <label class="public-profile-toggle modal-toggle" for="profileIsPublic">
-          <input id="profileIsPublic" type="checkbox" />
-          <span data-i18n="profiles.publicProfile">Public profile</span>
-        </label>
-          <label class="public-profile-toggle modal-toggle" for="profileIsDefault" style="margin-left:1.5em;">
+        <div class="profile-settings-options">
+          <label class="public-profile-toggle modal-toggle" for="profileIsPublic">
+            <input id="profileIsPublic" type="checkbox" />
+            <span data-i18n="profiles.publicProfile">Public profile</span>
+          </label>
+          <label class="public-profile-toggle modal-toggle" for="profileIsDefault">
             <input id="profileIsDefault" type="checkbox" />
             <span data-i18n="profiles.defaultProfile">Default profile</span>
           </label>
+        </div>
         <div class="modal-actions">
           <button id="profileSettingsOkBtn" class="btn" type="button">OK</button>
         </div>
