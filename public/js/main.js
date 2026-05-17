@@ -257,22 +257,32 @@ function isViewingOthersProfile() {
   return true;
 }
 
+function canManageProfiles() {
+  return state.authEnabled && Boolean(state.authenticatedUser) && !isViewingOthersProfile();
+}
+
 function syncProfileControlAvailability() {
-  const canManageProfiles = state.authEnabled && Boolean(state.authenticatedUser) && !isViewingOthersProfile();
+  const canManage = canManageProfiles();
   const hasProfiles = state.profiles.length > 0;
 
-  elements.saveProfileBtn.disabled = !canManageProfiles;
+  elements.saveProfileBtn.disabled = !canManage;
   if (elements.profileSettingsBtn) {
-    elements.profileSettingsBtn.disabled = !canManageProfiles;
+    elements.profileSettingsBtn.disabled = !canManage;
   }
   if (elements.profileIsPublic) {
-    elements.profileIsPublic.disabled = !canManageProfiles;
+    elements.profileIsPublic.disabled = !canManage;
   }
   if (elements.updateProfileBtn) {
-    elements.updateProfileBtn.disabled = !canManageProfiles;
+    elements.updateProfileBtn.disabled = !canManage;
   }
-  elements.deleteProfileBtn.disabled = !canManageProfiles;
+  elements.deleteProfileBtn.disabled = !canManage;
   elements.profileSelect.disabled = !hasProfiles;
+
+  if (elements.aircraftSetupToggle) {
+    elements.aircraftSetupToggle.disabled = !canManage;
+    setAircraftSetupEditable(canManage && elements.aircraftSetupToggle.checked);
+  }
+
   updateCreateQrMenuAvailability();
 }
 
@@ -721,12 +731,15 @@ function updateProfileDeleteAvailability() {
     : t("profiles.deleteSelectedProfile");
 }
 
-async function refreshProfiles() {
+async function refreshProfiles(options = {}) {
+  const { autoLoadDefault = true } = options;
+
   try {
     const profiles = await listProfiles();
     renderProfileSelect(Array.isArray(profiles) ? profiles : []);
 
     const shouldAutoLoadDefault = Boolean(
+      autoLoadDefault &&
       state.authEnabled &&
       state.authenticatedUser &&
       !sharedProfileIdFromQuery()
@@ -1000,7 +1013,7 @@ async function saveProfile() {
   if (state.selectedProfileId) {
     const updated = await updateProfile(state.selectedProfileId, payload);
     state.selectedProfileId = updated.id;
-    await refreshProfiles();
+    await refreshProfiles({ autoLoadDefault: false });
     elements.profileSelect.value = state.selectedProfileId;
     setStatus(t("status.updatedProfile", { name: updated.name }));
     return;
@@ -1008,7 +1021,7 @@ async function saveProfile() {
 
   const saved = await createProfile(payload);
   state.selectedProfileId = saved.id;
-  await refreshProfiles();
+  await refreshProfiles({ autoLoadDefault: false });
   elements.profileSelect.value = state.selectedProfileId;
   setStatus(t("status.savedProfile", { name: saved.name }));
 }
@@ -1212,6 +1225,12 @@ function bindEvents() {
       updateCreateQrMenuAvailability();
     });
   }
+
+  if (elements.aircraftSetupToggle) {
+    elements.aircraftSetupToggle.addEventListener("change", () => {
+      setAircraftSetupEditable(canManageProfiles() && elements.aircraftSetupToggle.checked);
+    });
+  }
 }
 
 async function init() {
@@ -1232,7 +1251,7 @@ async function init() {
   bindEvents();
 
   if (elements.aircraftSetupToggle) {
-    setAircraftSetupEditable(elements.aircraftSetupToggle.checked);
+    setAircraftSetupEditable(canManageProfiles() && elements.aircraftSetupToggle.checked);
   }
 
   const defaultDefinitions = [
