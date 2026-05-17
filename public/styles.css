@@ -158,6 +158,17 @@ body {
   font-size: 0.95rem;
 }
 
+.auth-btn svg {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .locale-dropdown-btn {
   min-width: 3.2rem;
   padding: 0.3rem 0.5rem;
