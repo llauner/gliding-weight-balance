@@ -52,8 +52,11 @@ const elements = {
   cgValue: document.querySelector("#cgValue"),
   balanceStatusValue: document.querySelector("#balanceStatusValue"),
   maxWaterBallastValue: document.querySelector("#maxWaterBallastValue"),
-  localeEnBtn: document.querySelector("#localeEnBtn"),
-  localeFrBtn: document.querySelector("#localeFrBtn"),
+  languageDropdownBtn: document.querySelector("#languageDropdownBtn"),
+  languageDropdownMenu: document.querySelector("#languageDropdownMenu"),
+  languageDropdownCurrentFlag: document.querySelector("#languageDropdownCurrentFlag"),
+  languageDropdownCurrentLabel: document.querySelector("#languageDropdownCurrentLabel"),
+  localeOptions: Array.from(document.querySelectorAll(".locale-option")),
   menuBtn: document.querySelector("#menuBtn"),
   menuDropdown: document.querySelector("#menuDropdown"),
   menuCreateQrBtn: document.querySelector("#menuCreateQrBtn"),
@@ -115,6 +118,15 @@ function setMenuOpen(isOpen) {
 
   elements.menuDropdown.hidden = !isOpen;
   elements.menuBtn.setAttribute("aria-expanded", String(isOpen));
+}
+
+function setLanguageDropdownOpen(isOpen) {
+  if (!elements.languageDropdownBtn || !elements.languageDropdownMenu) {
+    return;
+  }
+
+  elements.languageDropdownMenu.hidden = !isOpen;
+  elements.languageDropdownBtn.setAttribute("aria-expanded", String(isOpen));
 }
 
 function handleCreateQrCode() {
@@ -238,8 +250,28 @@ function updateAuthUi(user) {
 
 function updateLocaleButtons() {
   const locale = currentLanguage();
-  elements.localeEnBtn.classList.toggle("active", locale === "en");
-  elements.localeFrBtn.classList.toggle("active", locale === "fr");
+
+  if (elements.localeOptions && elements.localeOptions.length > 0) {
+    const activeOption = elements.localeOptions.find((option) => option.dataset.locale === locale);
+
+    elements.localeOptions.forEach((option) => {
+      const isActive = option.dataset.locale === locale;
+      option.classList.toggle("active", isActive);
+      option.setAttribute("aria-checked", String(isActive));
+    });
+
+    if (activeOption) {
+      const activeFlag = activeOption.querySelector(".locale-option-flag");
+      if (elements.languageDropdownCurrentFlag && activeFlag) {
+        elements.languageDropdownCurrentFlag.innerHTML = activeFlag.innerHTML;
+      }
+    }
+  }
+
+  if (elements.languageDropdownCurrentLabel) {
+    const labelKey = locale === "fr" ? "language.french" : "language.english";
+    elements.languageDropdownCurrentLabel.textContent = t(labelKey);
+  }
 }
 
 async function switchLocale(locale) {
@@ -920,13 +952,17 @@ async function runAction(fn) {
 }
 
 function bindEvents() {
-  elements.itemDefinitionsBody.addEventListener("dragover", handleItemDefinitionDragOver);
+  if (elements.itemDefinitionsBody) {
+    elements.itemDefinitionsBody.addEventListener("dragover", handleItemDefinitionDragOver);
+  }
 
-  elements.addItemDefinitionBtn.addEventListener("click", () => {
-    addItemDefinitionRow({ name: t("defaults.item"), arm: 0, weightFactor: 1, permanent: false, waterBallast: false });
-    syncItemsFromDefinitions();
-    recalculateAndRender();
-  });
+  if (elements.addItemDefinitionBtn) {
+    elements.addItemDefinitionBtn.addEventListener("click", () => {
+      addItemDefinitionRow({ name: t("defaults.item"), arm: 0, weightFactor: 1, permanent: false, waterBallast: false });
+      syncItemsFromDefinitions();
+      recalculateAndRender();
+    });
+  }
 
   [
     elements.emptyWeight,
@@ -939,96 +975,63 @@ function bindEvents() {
     elements.idealMaxCg,
     elements.profileName
   ].forEach((input) => {
-    input.addEventListener("input", recalculateAndRender);
-  });
-
-  elements.saveProfileBtn.addEventListener("click", () => runAction(saveProfile));
-  elements.deleteProfileBtn.addEventListener("click", () => runAction(removeSelectedProfile));
-  elements.localeEnBtn.addEventListener("click", () => runAction(() => switchLocale("en")));
-  elements.localeFrBtn.addEventListener("click", () => runAction(() => switchLocale("fr")));
-  elements.signInBtn.addEventListener("click", () => runAction(handleSignInButtonClick));
-  elements.profileSelect.addEventListener("change", () => {
-    const selectedId = elements.profileSelect.value;
-    if (!selectedId) {
-      state.selectedProfileId = "";
-      updateProfileDeleteAvailability();
-      return;
+    if (input) {
+      input.addEventListener("input", recalculateAndRender);
     }
-
-    runAction(loadSelectedProfile);
   });
 
-  if (elements.menuBtn && elements.menuDropdown) {
-    elements.menuBtn.addEventListener("click", (event) => {
+  if (elements.saveProfileBtn) {
+    elements.saveProfileBtn.addEventListener("click", () => runAction(saveProfile));
+  }
+
+  if (elements.deleteProfileBtn) {
+    elements.deleteProfileBtn.addEventListener("click", () => runAction(removeSelectedProfile));
+  }
+
+  if (elements.languageDropdownBtn && elements.languageDropdownMenu) {
+    elements.languageDropdownBtn.addEventListener("click", (event) => {
       event.stopPropagation();
-      const isOpen = elements.menuDropdown.hidden;
-      setMenuOpen(isOpen);
+      setLanguageDropdownOpen(elements.languageDropdownMenu.hidden);
     });
 
-    elements.menuDropdown.addEventListener("click", (event) => {
-      event.stopPropagation();
+    elements.localeOptions.forEach((option) => {
+      option.addEventListener("click", () => {
+        const selectedLanguage = option.dataset.locale;
+        setLanguageDropdownOpen(false);
+        if (selectedLanguage && selectedLanguage !== currentLanguage()) {
+          runAction(() => switchLocale(selectedLanguage));
+        }
+      });
     });
 
-    document.addEventListener("click", () => {
-      setMenuOpen(false);
+    document.addEventListener("click", (event) => {
+      const clickInside = event.target.closest(".locale-switcher");
+      if (!clickInside) {
+        setLanguageDropdownOpen(false);
+      }
     });
 
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
-        setMenuOpen(false);
-        setAboutModalOpen(false);
+        setLanguageDropdownOpen(false);
       }
     });
   }
 
-  if (elements.menuCreateQrBtn) {
-      if (elements.menuForceUpdateBtn) {
-        elements.menuForceUpdateBtn.addEventListener("click", async () => {
-          setMenuOpen(false);
-          setStatus("Checking for update...");
-          try {
-            const updated = await forceUpdateServiceWorker();
-            if (!updated) {
-              setStatus("Already up to date.");
-            } // else: page will reload
-          } catch (err) {
-            setStatus("Update failed: " + (err && err.message ? err.message : err), true);
-          }
-        });
+  if (elements.signInBtn) {
+    elements.signInBtn.addEventListener("click", () => runAction(handleSignInButtonClick));
+  }
+
+  if (elements.profileSelect) {
+    elements.profileSelect.addEventListener("change", () => {
+      const selectedId = elements.profileSelect.value;
+      if (!selectedId) {
+        state.selectedProfileId = "";
+        updateProfileDeleteAvailability();
+        return;
       }
-    elements.menuCreateQrBtn.addEventListener("click", () => {
-      setMenuOpen(false);
-      runAction(handleCreateQrCode);
-    });
-  }
 
-  if (elements.menuAboutBtn) {
-    elements.menuAboutBtn.addEventListener("click", () => {
-      setMenuOpen(false);
-      runAction(handleAbout);
-    });
-  }
-
-  if (elements.aboutModalOkBtn) {
-    elements.aboutModalOkBtn.addEventListener("click", () => {
-      setAboutModalOpen(false);
-    });
-  }
-
-  if (elements.aboutModal) {
-    elements.aboutModal.addEventListener("click", (event) => {
-      if (event.target === elements.aboutModal) {
-        setAboutModalOpen(false);
-      }
-    });
-  }
-
-  if (elements.aircraftSetupToggle) {
-    const stopSummaryToggle = (event) => event.stopPropagation();
-    elements.aircraftSetupToggle.addEventListener("click", stopSummaryToggle);
-    elements.aircraftSetupToggle.addEventListener("keydown", stopSummaryToggle);
-    elements.aircraftSetupToggle.addEventListener("change", () => {
-      setAircraftSetupEditable(elements.aircraftSetupToggle.checked);
+      runAction(loadSelectedProfile);
     });
   }
 }

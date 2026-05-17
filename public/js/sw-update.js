@@ -5,11 +5,9 @@ export function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js').then(reg => {
-        // Optionally listen for updates
+        console.log('Service worker registered:', reg);
       }).catch(err => {
-        // Registration failed
-        // eslint-disable-next-line no-console
-        console.warn('Service worker registration failed:', err);
+        console.error('Service worker registration failed:', err);
       });
     });
   }
@@ -18,21 +16,10 @@ export function registerServiceWorker() {
 // Returns a promise that resolves true if an update was found and applied
 export async function forceUpdateServiceWorker() {
   if (!('serviceWorker' in navigator)) return false;
-  const reg = await navigator.serviceWorker.getRegistration();
-  if (!reg) return false;
-  // Try to update
-  await reg.update();
-  if (reg.waiting) {
-    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-    // Wait for controllerchange
-    return new Promise(resolve => {
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload();
-        resolve(true);
-      }, { once: true });
-    });
-  } else if (reg.active && !reg.waiting) {
-    // No update found
-    return false;
+  const registration = await navigator.serviceWorker.ready;
+  if (registration.waiting) {
+    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    return true;
   }
+  return false;
 }
