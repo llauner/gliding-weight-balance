@@ -32,7 +32,9 @@ const resources = {
       profiles: {
         title: "Profiles",
         profileNamePlaceholder: "Profile name",
+        settings: "Profile Settings",
         publicProfile: "Public profile",
+        defaultProfile: "Default profile",
         selectSavedProfile: "Select a saved profile",
         saveNewProfile: "Save new profile",
         updateSelectedProfile: "Update selected profile",
@@ -165,7 +167,9 @@ const resources = {
       profiles: {
         title: "Profils",
         profileNamePlaceholder: "Nom du profil",
+        settings: "Parametres du profil",
         publicProfile: "Profil public",
+        defaultProfile: "Profil par défaut",
         selectSavedProfile: "Selection profil enregistre",
         saveNewProfile: "Enregistrer un nouveau profil",
         updateSelectedProfile: "Mettre a jour le profil selectionne",

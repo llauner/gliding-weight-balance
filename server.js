@@ -197,7 +197,7 @@ function normalizeProfile(payload) {
 
   return {
     name: normalizedName,
-    isDefault: isDefaultProfileName(normalizedName),
+    isDefault: Boolean(payload.isDefault),
     isPublic: Boolean(payload.isPublic),
     aircraft: {
       emptyWeight: Number(aircraft.emptyWeight) || 0,

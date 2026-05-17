@@ -145,8 +145,23 @@ async function createProfile(profileData, userId) {
     throw error;
   }
 
+  // Guarantee only one default profile per user
+  let isDefault = Boolean(profileData.isDefault);
+  if (isDefault) {
+    const snapshot = await db.collection(COLLECTION_NAME).where("userId", "==", userId).get();
+    const batch = db.batch();
+    snapshot.forEach((doc) => {
+      if (doc.id !== docId && doc.data().isDefault) {
+        batch.update(doc.ref, { isDefault: false });
+      }
+    });
+    await batch.commit();
+  }
+
+  // Always set isDefault explicitly
   const docData = {
     ...profileData,
+    isDefault,
     userId,
     createdAt: now,
     updatedAt: now
@@ -178,9 +193,24 @@ async function updateProfile(docId, profileData, userId) {
     return null;
   }
 
+  // Guarantee only one default profile per user
+  let isDefault = Boolean(profileData.isDefault);
+  if (isDefault) {
+    const snapshot = await db.collection(COLLECTION_NAME).where("userId", "==", userId).get();
+    const batch = db.batch();
+    snapshot.forEach((otherDoc) => {
+      if (otherDoc.id !== docId && otherDoc.data().isDefault) {
+        batch.update(otherDoc.ref, { isDefault: false });
+      }
+    });
+    await batch.commit();
+  }
+
+  // Always set isDefault explicitly
   const updated = {
     ...existing,
     ...profileData,
+    isDefault,
     userId,
     createdAt: existing.createdAt,
     updatedAt: new Date().toISOString()

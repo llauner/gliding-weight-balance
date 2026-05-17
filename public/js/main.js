@@ -34,7 +34,9 @@ import { getPublicProfile } from "./api.js";
 
 const elements = {
   profileName: document.querySelector("#profileName"),
+  profileSettingsBtn: document.querySelector("#profileSettingsBtn"),
   profileIsPublic: document.querySelector("#profileIsPublic"),
+  profileIsDefault: document.querySelector("#profileIsDefault"),
   profileSelect: document.querySelector("#profileSelect"),
   saveProfileBtn: document.querySelector("#saveProfileBtn"),
   updateProfileBtn: document.querySelector("#updateProfileBtn"),
@@ -66,6 +68,8 @@ const elements = {
   aboutModal: document.querySelector("#aboutModal"),
   aboutVersionValue: document.querySelector("#aboutVersionValue"),
   aboutModalOkBtn: document.querySelector("#aboutModalOkBtn"),
+  profileSettingsModal: document.querySelector("#profileSettingsModal"),
+  profileSettingsOkBtn: document.querySelector("#profileSettingsOkBtn"),
   authUserText: document.querySelector("#authUserText"),
   signInBtn: document.querySelector("#signInBtn"),
   itemsBody: document.querySelector("#itemsBody"),
@@ -218,6 +222,14 @@ function setAboutModalOpen(isOpen) {
   elements.aboutModal.hidden = !isOpen;
 }
 
+function setProfileSettingsModalOpen(isOpen) {
+  if (!elements.profileSettingsModal) {
+    return;
+  }
+
+  elements.profileSettingsModal.hidden = !isOpen;
+}
+
 async function handleAbout() {
   setAboutVersionText("Loading...");
   setAboutModalOpen(true);
@@ -247,6 +259,9 @@ function syncProfileControlAvailability() {
   const hasProfiles = state.profiles.length > 0;
 
   elements.saveProfileBtn.disabled = !canManageProfiles;
+  if (elements.profileSettingsBtn) {
+    elements.profileSettingsBtn.disabled = !canManageProfiles;
+  }
   if (elements.profileIsPublic) {
     elements.profileIsPublic.disabled = !canManageProfiles;
   }
@@ -527,6 +542,7 @@ function profilePayload() {
   return {
     name: elements.profileName.value.trim(),
     isPublic: Boolean(elements.profileIsPublic && elements.profileIsPublic.checked),
+    isDefault: Boolean(elements.profileIsDefault && elements.profileIsDefault.checked),
     aircraft: aircraftFromForm(),
     items: itemsFromForm()
   };
@@ -583,6 +599,9 @@ function writeProfileToForm(profile) {
   elements.profileName.value = profile.name || "";
   if (elements.profileIsPublic) {
     elements.profileIsPublic.checked = Boolean(profile.isPublic);
+  }
+  if (elements.profileIsDefault) {
+    elements.profileIsDefault.checked = Boolean(profile.isDefault);
   }
 
   const fallbackDefinitions = [
@@ -1152,6 +1171,18 @@ function bindEvents() {
   if (elements.aboutModalOkBtn) {
     elements.aboutModalOkBtn.addEventListener("click", () => {
       setAboutModalOpen(false);
+    });
+  }
+
+  if (elements.profileSettingsBtn) {
+    elements.profileSettingsBtn.addEventListener("click", () => {
+      setProfileSettingsModalOpen(true);
+    });
+  }
+
+  if (elements.profileSettingsOkBtn) {
+    elements.profileSettingsOkBtn.addEventListener("click", () => {
+      setProfileSettingsModalOpen(false);
     });
   }
 

@@ -98,10 +98,12 @@
                 <path d="M7 21v-7h10v7" />
               </svg>
             </button>
-            <label class="public-profile-toggle" for="profileIsPublic">
-              <input id="profileIsPublic" type="checkbox" />
-              <span data-i18n="profiles.publicProfile">Public profile</span>
-            </label>
+            <button id="profileSettingsBtn" class="btn btn-icon" type="button" title="Profile settings" aria-label="Profile settings" data-i18n-attr="title:profiles.settings;aria-label:profiles.settings">
+              <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
+                <path d="M10.04 4.63 10.46 3h3.08l.42 1.63c.09.36.35.66.7.79l1.49.58 1.43-.87 2.18 2.18-.87 1.43c-.21.31-.24.7-.09 1.05l.58 1.49 1.63.42v3.08l-1.63.42c-.36.09-.66.35-.79.7l-.58 1.49.87 1.43-2.18 2.18-1.43-.87a1.03 1.03 0 0 0-1.05-.09l-1.49.58-.42 1.63h-3.08l-.42-1.63a1.03 1.03 0 0 0-.7-.79l-1.49-.58a1.03 1.03 0 0 0-1.05.09l-1.43.87-2.18-2.18.87-1.43c.21-.31.24-.7.09-1.05l-.58-1.49-1.63-.42v-3.08l1.63-.42c.36-.09.66-.35.79-.7l.58-1.49a1.03 1.03 0 0 0-.09-1.05l-.87-1.43 2.18-2.18 1.43.87c.31.21.7.24 1.05.09l1.49-.58c.35-.13.61-.43.7-.79Z" />
+                <circle cx="12" cy="12" r="3.25" />
+              </svg>
+            </button>
             <p id="statusText" class="status-text" data-i18n="profiles.ready">Ready.</p>
           </div>
         </div>
@@ -240,6 +242,23 @@
         <p>Commercial use, redistribution, or derivative works require explicit written permission.</p>
         <div class="modal-actions">
           <button id="aboutModalOkBtn" class="btn" type="button">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="profileSettingsModal" class="modal-backdrop" hidden>
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="profileSettingsTitle">
+        <h3 id="profileSettingsTitle" data-i18n="profiles.settings">Profile Settings</h3>
+        <label class="public-profile-toggle modal-toggle" for="profileIsPublic">
+          <input id="profileIsPublic" type="checkbox" />
+          <span data-i18n="profiles.publicProfile">Public profile</span>
+        </label>
+          <label class="public-profile-toggle modal-toggle" for="profileIsDefault" style="margin-left:1.5em;">
+            <input id="profileIsDefault" type="checkbox" />
+            <span data-i18n="profiles.defaultProfile">Default profile</span>
+          </label>
+        <div class="modal-actions">
+          <button id="profileSettingsOkBtn" class="btn" type="button">OK</button>
         </div>
       </div>
     </div>
