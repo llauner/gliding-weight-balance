@@ -95,6 +95,7 @@ const state = {
 };
 
 const USER_ICON_SVG = '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"></circle><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"></path></svg>';
+const SIGN_OUT_ICON_SVG = '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M10 4H5v16h5"></path><path d="M14 8l4 4-4 4"></path><path d="M18 12H9"></path></svg>';
 
 function createId(prefix) {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -297,7 +298,7 @@ function updateAuthUi(user) {
     elements.signInBtn.title = t("auth.notConfigured");
     elements.signInBtn.setAttribute("aria-label", t("auth.notConfigured"));
   } else if (state.authenticatedUser) {
-    elements.signInBtn.textContent = "↩";
+    elements.signInBtn.innerHTML = SIGN_OUT_ICON_SVG;
     elements.signInBtn.disabled = false;
     elements.signInBtn.title = t("auth.signOut");
     elements.signInBtn.setAttribute("aria-label", t("auth.signOut"));
