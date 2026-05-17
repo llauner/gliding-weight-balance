@@ -70,6 +70,9 @@ const elements = {
   aboutModalOkBtn: document.querySelector("#aboutModalOkBtn"),
   profileSettingsModal: document.querySelector("#profileSettingsModal"),
   profileSettingsOkBtn: document.querySelector("#profileSettingsOkBtn"),
+  deleteConfirmModal: document.querySelector("#deleteConfirmModal"),
+  deleteConfirmYesBtn: document.querySelector("#deleteConfirmYesBtn"),
+  deleteConfirmCancelBtn: document.querySelector("#deleteConfirmCancelBtn"),
   authUserText: document.querySelector("#authUserText"),
   signInBtn: document.querySelector("#signInBtn"),
   itemsBody: document.querySelector("#itemsBody"),
@@ -91,7 +94,8 @@ const state = {
   viewingSharedProfile: false,
   loadedProfileUserId: null,
   loadedProfileName: "",
-  loadedProfileIsDefault: false
+  loadedProfileIsDefault: false,
+  pendingDeleteConfirmResolve: null
 };
 
 const USER_ICON_SVG = '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"></circle><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"></path></svg>';
@@ -231,6 +235,37 @@ function setProfileSettingsModalOpen(isOpen) {
   }
 
   elements.profileSettingsModal.hidden = !isOpen;
+}
+
+function setDeleteConfirmModalOpen(isOpen) {
+  if (!elements.deleteConfirmModal) {
+    return;
+  }
+
+  elements.deleteConfirmModal.hidden = !isOpen;
+}
+
+function requestDeleteConfirmation() {
+  if (!elements.deleteConfirmModal || !elements.deleteConfirmYesBtn || !elements.deleteConfirmCancelBtn) {
+    return Promise.resolve(window.confirm("Are you sure you want to delete this profile ?"));
+  }
+
+  setDeleteConfirmModalOpen(true);
+  return new Promise((resolve) => {
+    state.pendingDeleteConfirmResolve = resolve;
+  });
+}
+
+function resolveDeleteConfirmation(confirmed) {
+  if (typeof state.pendingDeleteConfirmResolve === "function") {
+    const resolver = state.pendingDeleteConfirmResolve;
+    state.pendingDeleteConfirmResolve = null;
+    setDeleteConfirmModalOpen(false);
+    resolver(Boolean(confirmed));
+    return;
+  }
+
+  setDeleteConfirmModalOpen(false);
 }
 
 async function handleAbout() {
@@ -1058,6 +1093,11 @@ async function removeSelectedProfile() {
     return;
   }
 
+  const confirmed = await requestDeleteConfirmation();
+  if (!confirmed) {
+    return;
+  }
+
   await deleteProfile(id);
   if (state.selectedProfileId === id) {
     state.selectedProfileId = "";
@@ -1199,6 +1239,18 @@ function bindEvents() {
   if (elements.profileSettingsOkBtn) {
     elements.profileSettingsOkBtn.addEventListener("click", () => {
       setProfileSettingsModalOpen(false);
+    });
+  }
+
+  if (elements.deleteConfirmYesBtn) {
+    elements.deleteConfirmYesBtn.addEventListener("click", () => {
+      resolveDeleteConfirmation(true);
+    });
+  }
+
+  if (elements.deleteConfirmCancelBtn) {
+    elements.deleteConfirmCancelBtn.addEventListener("click", () => {
+      resolveDeleteConfirmation(false);
     });
   }
 

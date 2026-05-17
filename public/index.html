@@ -270,6 +270,17 @@
       </div>
     </div>
 
+    <div id="deleteConfirmModal" class="modal-backdrop" hidden>
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle">
+        <h3 id="deleteConfirmTitle">Delete Profile</h3>
+        <p>Are you sure you want to delete this profile ?</p>
+        <div class="modal-actions">
+          <button id="deleteConfirmCancelBtn" class="btn" type="button">Cancel</button>
+          <button id="deleteConfirmYesBtn" class="btn danger" type="button">Yes</button>
+        </div>
+      </div>
+    </div>
+
     <script src="https://unpkg.com/i18next@23.16.4/dist/umd/i18next.min.js"></script>
     <script type="module">
       import "/js/sw-update.js";
