@@ -812,6 +812,47 @@ tr:hover {
   align-items: stretch;
 }
 
+.chart-panel {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  min-height: 300px;
+  cursor: pointer;
+}
+
+.small-chart-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.small-chart-overlay[hidden] {
+  display: none !important;
+}
+
+.small-chart-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.chart-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  overflow: hidden;
+}
+
 .result-card {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -853,10 +894,25 @@ tr:hover {
   width: 100%;
   height: 100%;
   min-height: 300px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-  box-shadow: var(--shadow);
+}
+
+.results-layout.chart-collapsed {
+  --compact-chart-height: 40px;
+}
+
+.results-layout.chart-collapsed .chart-panel {
+  min-height: var(--compact-chart-height);
+  height: var(--compact-chart-height);
+}
+
+.results-layout.chart-collapsed .chart-viewport {
+  min-height: var(--compact-chart-height);
+  height: var(--compact-chart-height);
+}
+
+.results-layout.chart-collapsed #envelopeCanvas {
+  min-height: var(--compact-chart-height);
+  height: var(--compact-chart-height);
 }
 
 @keyframes rise {
@@ -881,6 +937,11 @@ tr:hover {
   }
 
   #envelopeCanvas {
+    min-height: 260px;
+  }
+
+  .chart-panel,
+  .chart-viewport {
     min-height: 260px;
   }
 }

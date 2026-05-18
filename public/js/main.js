@@ -56,6 +56,11 @@ const elements = {
   cgValue: document.querySelector("#cgValue"),
   balanceStatusValue: document.querySelector("#balanceStatusValue"),
   maxWaterBallastValue: document.querySelector("#maxWaterBallastValue"),
+  maxWaterBallastCard: document.querySelector("#maxWaterBallastCard"),
+  resultsLayout: document.querySelector(".results-layout"),
+  chartPanel: document.querySelector("#chartPanel"),
+  smallChartOverlay: document.querySelector("#smallChartOverlay"),
+  smallChartText: document.querySelector("#smallChartText"),
   languageDropdownBtn: document.querySelector("#languageDropdownBtn"),
   languageDropdownMenu: document.querySelector("#languageDropdownMenu"),
   languageDropdownCurrentFlag: document.querySelector("#languageDropdownCurrentFlag"),
@@ -97,7 +102,8 @@ const state = {
   loadedProfileName: "",
   loadedProfileIsDefault: false,
   pendingDeleteConfirmResolve: null,
-  referenceWetCg: null
+  referenceWetCg: null,
+  chartCollapsed: false
 };
 
 let activeBallastTooltip = null;
@@ -202,6 +208,38 @@ function setStatus(message, isError = false) {
   if (isError && window && window.alert) {
     window.alert(message);
   }
+}
+
+function syncCollapsedChartHeight() {
+  if (!elements.resultsLayout || !elements.maxWaterBallastCard) {
+    return;
+  }
+
+  if (!state.chartCollapsed) {
+    elements.resultsLayout.style.removeProperty("--compact-chart-height");
+    return;
+  }
+
+  const compactHeight = Math.max(32, Math.ceil(elements.maxWaterBallastCard.getBoundingClientRect().height / 2));
+  elements.resultsLayout.style.setProperty("--compact-chart-height", `${compactHeight}px`);
+}
+
+function setChartCollapsed(isCollapsed) {
+  if (!elements.resultsLayout) {
+    return;
+  }
+
+  state.chartCollapsed = Boolean(isCollapsed);
+  elements.resultsLayout.classList.toggle("chart-collapsed", state.chartCollapsed);
+
+  if (elements.chartPanel) {
+    elements.chartPanel.setAttribute("aria-expanded", String(!state.chartCollapsed));
+    elements.chartPanel.setAttribute("aria-label", state.chartCollapsed ? "Small chart (click to expand)" : "Chart (click to collapse)");
+    elements.chartPanel.title = state.chartCollapsed ? "Expand chart" : "Collapse chart";
+  }
+
+  syncCollapsedChartHeight();
+  recalculateAndRender();
 }
 
 function setMenuOpen(isOpen) {
@@ -1078,8 +1116,114 @@ function drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPe
     return;
   }
 
+  if (state.chartCollapsed) {
+    const compactMargin = { top: 14, right: 18, bottom: 14, left: 18 };
+    const compactGraphWidth = width - compactMargin.left - compactMargin.right;
+    const compactGraphHeight = height - compactMargin.top - compactMargin.bottom;
+
+    const cgValues = polygon.map((point) => point.cg).concat([wetTotals.cg]);
+    const weightValues = polygon.map((point) => point.weight).concat([wetTotals.totalWeight]);
+    const minCg = Math.min(...cgValues) - 10;
+    const maxCg = Math.max(...cgValues) + 10;
+    const minWeight = Math.min(...weightValues) - 10;
+    const maxWeight = Math.max(...weightValues) + 10;
+
+    const xForCg = (cg) => compactMargin.left + ((cg - minCg) / (maxCg - minCg || 1)) * compactGraphWidth;
+    const yForWeight = (weight) =>
+      compactMargin.top + compactGraphHeight - ((weight - minWeight) / (maxWeight - minWeight || 1)) * compactGraphHeight;
+
+    // Keep ideal CG background in small chart
+    const idealMinCg = Number(aircraft.idealMinCg);
+    const idealMaxCg = Number(aircraft.idealMaxCg);
+    if (Number.isFinite(idealMinCg) && Number.isFinite(idealMaxCg) && idealMaxCg > idealMinCg) {
+      const idealMinX = xForCg(idealMinCg);
+      const idealMaxX = xForCg(idealMaxCg);
+      context.fillStyle = "rgba(24, 128, 56, 0.12)";
+      context.fillRect(idealMinX, compactMargin.top, idealMaxX - idealMinX, compactGraphHeight);
+    }
+
+    // Keep blue envelope background and outline
+    context.beginPath();
+    polygon.forEach((point, index) => {
+      const x = xForCg(point.cg);
+      const y = yForWeight(point.weight);
+      if (index === 0) {
+        context.moveTo(x, y);
+      } else {
+        context.lineTo(x, y);
+      }
+    });
+    context.closePath();
+    context.fillStyle = "rgba(31, 115, 230, 0.12)";
+    context.fill();
+    context.strokeStyle = "#1f73e6";
+    context.lineWidth = 2;
+    context.stroke();
+
+    // Keep dotted horizontal lines
+    context.setLineDash([4, 3]);
+    context.strokeStyle = "#dadce0";
+    context.lineWidth = 1;
+    const maxWeightY = yForWeight(aircraft.maxWeight);
+    const emptyWeightY = yForWeight(aircraft.emptyWeight);
+    context.beginPath();
+    context.moveTo(compactMargin.left, maxWeightY);
+    context.lineTo(width - compactMargin.right, maxWeightY);
+    context.moveTo(compactMargin.left, emptyWeightY);
+    context.lineTo(width - compactMargin.right, emptyWeightY);
+    context.stroke();
+    context.setLineDash([]);
+
+    // Keep orange CG limit lines
+    const minCgGuideX = xForCg(aircraft.minCg);
+    const maxCgGuideX = xForCg(aircraft.maxCg);
+    context.strokeStyle = "#f57c00";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(minCgGuideX, compactMargin.top);
+    context.lineTo(minCgGuideX, height - compactMargin.bottom);
+    context.moveTo(maxCgGuideX, compactMargin.top);
+    context.lineTo(maxCgGuideX, height - compactMargin.bottom);
+    context.stroke();
+
+    // Show wet point — use ellipse() to compensate for different X/Y display scales
+    // so the dot appears as a circle regardless of the canvas aspect ratio vs display size.
+    const visualScaleX = canvas.clientWidth > 0 ? canvas.clientWidth / canvas.width : 1;
+    const visualScaleY = canvas.clientHeight > 0 ? canvas.clientHeight / canvas.height : 1;
+    const targetVisualRadius = 4; // desired radius in screen pixels
+    const radiusX = targetVisualRadius / Math.max(visualScaleX, 0.01);
+    const radiusY = targetVisualRadius / Math.max(visualScaleY, 0.01);
+    const wetPointX = Math.min(
+      width - compactMargin.right - radiusX,
+      Math.max(compactMargin.left + radiusX, xForCg(wetTotals.cg))
+    );
+    const wetPointY = Math.min(
+      height - compactMargin.bottom - radiusY,
+      Math.max(compactMargin.top + radiusY, yForWeight(wetTotals.totalWeight))
+    );
+    context.beginPath();
+    context.ellipse(wetPointX, wetPointY, radiusX, radiusY, 0, 0, Math.PI * 2);
+    context.fillStyle = balance.className === "ok" ? "#188038" : "#d33b27";
+    context.fill();
+
+    // Show wet percentage as HTML overlay (not canvas text)
+    const wetPercentText = wetPercent === null ? t("chart.notAvailable") : `Wet: ${wetPercent.toFixed(1)}%`;
+    if (elements.smallChartText) {
+      elements.smallChartText.textContent = wetPercentText;
+    }
+    if (elements.smallChartOverlay) {
+      elements.smallChartOverlay.hidden = false;
+    }
+    return;
+  }
+
   const cgValues = polygon.map((point) => point.cg).concat([dryTotals.cg, wetTotals.cg]);
   const weightValues = polygon.map((point) => point.weight).concat([dryTotals.totalWeight, wetTotals.totalWeight]);
+
+  // Hide HTML overlay in full chart mode
+  if (elements.smallChartOverlay) {
+    elements.smallChartOverlay.hidden = true;
+  }
 
   const minCg = Math.min(...cgValues) - 10;
   const maxCg = Math.max(...cgValues) + 10;
@@ -1275,6 +1419,7 @@ function recalculateAndRender() {
   elements.balanceStatusValue.innerHTML = `${translateBalanceLabel(balance.label)}<br><span style="font-weight: 400; opacity: 0.8;">${t("balance.details", { dry: dryPercentText, wet: wetPercentText })}</span>`;
 
   drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPercent);
+  syncCollapsedChartHeight();
 }
 
 async function saveProfile() {
@@ -1534,6 +1679,25 @@ function bindEvents() {
       setAircraftSetupEditable(canManageProfiles() && elements.aircraftSetupToggle.checked);
     });
   }
+
+  if (elements.chartPanel) {
+    elements.chartPanel.addEventListener("click", () => {
+      setChartCollapsed(!state.chartCollapsed);
+    });
+
+    elements.chartPanel.setAttribute("role", "button");
+    elements.chartPanel.setAttribute("tabindex", "0");
+    elements.chartPanel.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        setChartCollapsed(!state.chartCollapsed);
+      }
+    });
+  }
+
+  window.addEventListener("resize", () => {
+    syncCollapsedChartHeight();
+  });
 }
 
 async function init() {
@@ -1552,6 +1716,7 @@ async function init() {
   });
 
   bindEvents();
+  setChartCollapsed(false);
 
   if (elements.aircraftSetupToggle) {
     setAircraftSetupEditable(canManageProfiles() && elements.aircraftSetupToggle.checked);

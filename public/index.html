@@ -134,12 +134,19 @@
               <span data-i18n="results.balanceStatus">Balance Status</span>
               <strong id="balanceStatusValue" data-i18n="results.unknown">UNKNOWN</strong>
             </article>
-            <article class="result-card span-full inline-label">
+            <article id="maxWaterBallastCard" class="result-card span-full inline-label">
               <span data-i18n="results.maxPermissibleWaterBallast">Max Permissible Water Ballast</span>
               <strong id="maxWaterBallastValue">0 kg</strong>
             </article>
           </div>
-          <canvas id="envelopeCanvas" width="680" height="300" aria-label="CG envelope chart" data-i18n-attr="aria-label:chart.ariaLabel"></canvas>
+          <div id="chartPanel" class="chart-panel">
+            <div class="chart-viewport">
+              <canvas id="envelopeCanvas" width="680" height="300" aria-label="CG envelope chart" data-i18n-attr="aria-label:chart.ariaLabel"></canvas>
+            </div>
+            <div id="smallChartOverlay" class="small-chart-overlay" hidden>
+              <strong id="smallChartText" class="small-chart-text"></strong>
+            </div>
+          </div>
         </div>
       </section>
 
