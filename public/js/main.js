@@ -121,7 +121,10 @@ function createId(prefix) {
 }
 
 function numberValue(input) {
-  const value = Number(input.value);
+  if (!input) return 0;
+  // Accept both dot and comma, always normalize to dot
+  const raw = String(input.value).replace(/,/g, ".");
+  const value = Number(raw);
   return Number.isFinite(value) ? value : 0;
 }
 
@@ -895,6 +898,18 @@ function attachWaterBallastFocusListeners() {
   // Add listeners
   ballast1Input.addEventListener("focus", ballast1FocusHandler);
   ballast2Input.addEventListener("focus", ballast2FocusHandler);
+  // Manual validation: allow only numbers, dot, comma, and at most one decimal
+  const validateBallastInput = (e) => {
+    let v = e.target.value.replace(/,/g, ".");
+    // Remove invalid chars
+    v = v.replace(/[^0-9.]/g, "");
+    // Only one dot
+    const parts = v.split(".");
+    if (parts.length > 2) v = parts[0] + "." + parts.slice(1).join("");
+    e.target.value = v;
+  };
+  ballast1Input.addEventListener("input", validateBallastInput);
+  ballast2Input.addEventListener("input", validateBallastInput);
   
   // On iOS, blur fires immediately when keyboard appears, even before interaction completes.
   // Instead of hiding on blur, hide only when another focusable element gets focus.
