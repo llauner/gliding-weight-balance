@@ -846,6 +846,21 @@ tr:hover {
   cursor: pointer;
 }
 
+.chart-collapse-icon {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  transition: transform 200ms ease;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.results-layout:not(.chart-collapsed) .chart-collapse-icon {
+  transform: rotate(90deg);
+}
+
 .small-chart-overlay {
   position: absolute;
   inset: 0;
