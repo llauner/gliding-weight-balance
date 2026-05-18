@@ -110,6 +110,7 @@ let activeBallastTooltip = null;
 let activeBallastInput = null;
 let activeBallastTooltipShowTime = null; // Track when tooltip appeared for grace period
 let ballastTooltipTrackingInitialized = false;
+let ballastTooltipListenersCleanup = null;
 
 const USER_ICON_SVG = '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"></circle><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"></path></svg>';
 const SIGN_OUT_ICON_SVG = '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M10 4H5v16h5"></path><path d="M14 8l4 4-4 4"></path><path d="M18 12H9"></path></svg>';
@@ -138,22 +139,6 @@ function positionTooltipAboveInput(tooltip, input) {
   const viewportHeight = viewport ? viewport.height : window.innerHeight;
   const viewportOffsetLeft = viewport ? viewport.offsetLeft : 0;
   const viewportOffsetTop = viewport ? viewport.offsetTop : 0;
-  const viewportRight = viewportOffsetLeft + viewportWidth;
-  const viewportBottom = viewportOffsetTop + viewportHeight;
-
-  // Hide tooltip when its linked input is outside the visible viewport.
-  // This keeps tooltip/input association consistent during scrolling.
-  const inputOutOfView =
-    rect.bottom < viewportOffsetTop ||
-    rect.top > viewportBottom ||
-    rect.right < viewportOffsetLeft ||
-    rect.left > viewportRight;
-
-  if (inputOutOfView) {
-    tooltip.style.display = "none";
-    return false;
-  }
-
   const centerX = rect.left + rect.width / 2;
   const desiredTop = rect.top - 12;
   const clampedX = Math.min(
@@ -189,12 +174,7 @@ function updateActiveBallastTooltipPosition() {
     if (elapsedSinceShow < 500) {
       return;
     }
-    const isVisible = positionTooltipAboveInput(activeBallastTooltip, activeBallastInput);
-    if (!isVisible) {
-      activeBallastTooltip = null;
-      activeBallastInput = null;
-      activeBallastTooltipShowTime = null;
-    }
+    positionTooltipAboveInput(activeBallastTooltip, activeBallastInput);
   }, 350);
 }
 
@@ -712,6 +692,11 @@ function renderItemRows(definitions, existingWeights = new Map()) {
 }
 
 function attachWaterBallastFocusListeners() {
+  if (ballastTooltipListenersCleanup) {
+    ballastTooltipListenersCleanup();
+    ballastTooltipListenersCleanup = null;
+  }
+
   initializeBallastTooltipTracking();
 
   if (state.referenceWetCg === null) {
@@ -784,6 +769,7 @@ function attachWaterBallastFocusListeners() {
     ballast2Tooltip.style.display = "none";
     activeBallastTooltip = null;
     activeBallastInput = null;
+    activeBallastTooltipShowTime = null;
   };
 
   // Focus handler for ballast1
@@ -807,6 +793,7 @@ function attachWaterBallastFocusListeners() {
         ballast1Tooltip.style.display = "none";
         activeBallastTooltip = null;
         activeBallastInput = null;
+        activeBallastTooltipShowTime = null;
       };
       // iOS: touchstart fires before blur; mirror the mousedown copy logic
       ballast1Tooltip.ontouchstart = (e) => {
@@ -817,6 +804,7 @@ function attachWaterBallastFocusListeners() {
         ballast1Tooltip.style.display = "none";
         activeBallastTooltip = null;
         activeBallastInput = null;
+        activeBallastTooltipShowTime = null;
       };
       ballast1Tooltip.onclick = null;
     } else {
@@ -845,6 +833,7 @@ function attachWaterBallastFocusListeners() {
         ballast2Tooltip.style.display = "none";
         activeBallastTooltip = null;
         activeBallastInput = null;
+        activeBallastTooltipShowTime = null;
       };
       // iOS: touchstart fires before blur; mirror the mousedown copy logic
       ballast2Tooltip.ontouchstart = (e) => {
@@ -855,6 +844,7 @@ function attachWaterBallastFocusListeners() {
         ballast2Tooltip.style.display = "none";
         activeBallastTooltip = null;
         activeBallastInput = null;
+        activeBallastTooltipShowTime = null;
       };
       ballast2Tooltip.onclick = null;
     } else {
@@ -870,17 +860,23 @@ function attachWaterBallastFocusListeners() {
   // Instead of hiding on blur, hide only when another focusable element gets focus.
   // But respect the grace period: wait 500ms after tooltip appears before allowing hide.
   // This lets the tooltip persist for the entire iOS interaction.
-  document.addEventListener("focus", (e) => {
+  const documentFocusHandler = (e) => {
     const target = e.target;
     // If a different input got focus, and grace period has elapsed, hide the tooltips
     if (target !== ballast1Input && target !== ballast2Input && (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
       const elapsedSinceShow = Date.now() - (activeBallastTooltipShowTime || 0);
       if (elapsedSinceShow >= 500) {
         hideTooltips();
-        activeBallastTooltipShowTime = null;
       }
     }
-  }, true); // Use capture phase to catch all focus events
+  };
+  document.addEventListener("focus", documentFocusHandler, true); // Use capture phase to catch all focus events
+
+  ballastTooltipListenersCleanup = () => {
+    ballast1Input.removeEventListener("focus", ballast1FocusHandler);
+    ballast2Input.removeEventListener("focus", ballast2FocusHandler);
+    document.removeEventListener("focus", documentFocusHandler, true);
+  };
 }
 
 function syncItemsFromDefinitions() {
