@@ -89,3 +89,72 @@ export function envelopePolygon(aircraft) {
     { cg: minCg, weight: maxWeight }
   ];
 }
+
+export function calculateWaterBallastAdjustment(aircraft, items, referenceWetCg) {
+  if (!referenceWetCg) {
+    return null;
+  }
+
+  // Find water ballast items
+  const ballastItems = items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => item.waterBallast);
+
+  if (ballastItems.length !== 2) {
+    return null;
+  }
+
+  const [ballast1, ballast2] = ballastItems;
+
+  // Calculate empty aircraft contribution
+  const emptyWeight = toNumber(aircraft.emptyWeight);
+  const emptyArm = toNumber(aircraft.emptyArm);
+  const emptyMoment = emptyWeight * emptyArm;
+
+  // Calculate non-ballast items contribution
+  const nonBallastItems = items.filter(item => !item.waterBallast);
+  const nonBallastTotals = calculateTotals(aircraft, nonBallastItems);
+  const nonBallastWeight = nonBallastTotals.totalWeight - emptyWeight;
+  const nonBallastMoment = nonBallastTotals.totalMoment - emptyMoment;
+
+  // Get current ballast values
+  const w1 = toNumber(ballast1.item.weight);
+  const arm1 = toNumber(ballast1.item.arm);
+  const w2 = toNumber(ballast2.item.weight);
+  const arm2 = toNumber(ballast2.item.arm);
+
+  // Calculate what ballast2 should be if we keep ballast1 at w1
+  // Formula: w2 = [M_empty + M_other + w1 * (arm1 - refCG) - refCG * (W_empty + W_other)] / (refCG - arm2)
+  const denominator2 = referenceWetCg - arm2;
+  let suggestedW2 = null;
+  if (Math.abs(denominator2) > 0.01) {
+    suggestedW2 = 
+      (emptyMoment + nonBallastMoment + w1 * (arm1 - referenceWetCg) - referenceWetCg * (emptyWeight + nonBallastWeight)) / 
+      denominator2;
+    suggestedW2 = Math.max(0, suggestedW2); // Can't have negative weight
+  }
+
+  // Calculate what ballast1 should be if we keep ballast2 at w2
+  const denominator1 = referenceWetCg - arm1;
+  let suggestedW1 = null;
+  if (Math.abs(denominator1) > 0.01) {
+    suggestedW1 = 
+      (emptyMoment + nonBallastMoment + w2 * (arm2 - referenceWetCg) - referenceWetCg * (emptyWeight + nonBallastWeight)) / 
+      denominator1;
+    suggestedW1 = Math.max(0, suggestedW1); // Can't have negative weight
+  }
+
+  return {
+    ballast1: {
+      name: ballast1.item.name,
+      currentWeight: w1,
+      suggestedWeight: suggestedW1
+    },
+    ballast2: {
+      name: ballast2.item.name,
+      currentWeight: w2,
+      suggestedWeight: suggestedW2
+    },
+    referenceWetCg
+  };
+}

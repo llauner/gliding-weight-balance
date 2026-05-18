@@ -718,6 +718,7 @@ td {
   padding: 0.75rem;
   border-bottom: 1px solid var(--border);
   text-align: left;
+  position: relative;
 }
 
 th {
@@ -770,6 +771,22 @@ th {
 
 tr:hover {
   background: var(--bg-light);
+}
+
+.ballast-tooltip {
+  position: fixed;
+  background: var(--primary);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  display: none;
+  box-shadow: var(--shadow);
+  z-index: 999999 !important;
+  transition: opacity 0.2s ease;
 }
 
 .result-grid {

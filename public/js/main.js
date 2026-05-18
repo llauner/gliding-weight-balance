@@ -1,5 +1,6 @@
 import {
   calculateTotals,
+  calculateWaterBallastAdjustment,
   envelopePolygon,
   evaluateBalance
 } from "./calculations.js";
@@ -95,7 +96,8 @@ const state = {
   loadedProfileUserId: null,
   loadedProfileName: "",
   loadedProfileIsDefault: false,
-  pendingDeleteConfirmResolve: null
+  pendingDeleteConfirmResolve: null,
+  referenceWetCg: null
 };
 
 const USER_ICON_SVG = '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"></circle><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"></path></svg>';
@@ -553,7 +555,19 @@ function renderItemRows(definitions, existingWeights = new Map()) {
     const row = fragment.querySelector("tr");
     row.dataset.definitionId = definition.id || createId("def");
     row.querySelector(".item-name").textContent = definition.name;
-    row.querySelector('[data-field="weight"]').value = weightFor(definition.id, index);
+    const weightInput = row.querySelector('[data-field="weight"]');
+    weightInput.value = weightFor(definition.id, index);
+    weightInput.addEventListener("focus", () => {
+      if (Number(weightInput.value) === 0) {
+        weightInput.value = "";
+      }
+    });
+    weightInput.addEventListener("blur", () => {
+      if (weightInput.value.trim() === "") {
+        weightInput.value = 0;
+        recalculateAndRender();
+      }
+    });
     row.addEventListener("input", recalculateAndRender);
     row.addEventListener("change", recalculateAndRender);
     if (definition.permanent) {
@@ -564,6 +578,133 @@ function renderItemRows(definitions, existingWeights = new Map()) {
   });
 
   setAircraftSetupEditable(elements.aircraftSetupToggle ? elements.aircraftSetupToggle.checked : true);
+  attachWaterBallastFocusListeners();
+}
+
+function attachWaterBallastFocusListeners() {
+  if (state.referenceWetCg === null) {
+    return;
+  }
+
+  const definitions = itemDefinitionsFromForm();
+
+  const ballastDefinitions = definitions
+    .map((def, index) => ({ def, index }))
+    .filter(({ def }) => def.waterBallast);
+
+  if (ballastDefinitions.length !== 2) {
+    return;
+  }
+
+  const [ballast1Data, ballast2Data] = ballastDefinitions;
+  const ballast1Def = ballast1Data.def;
+  const ballast2Def = ballast2Data.def;
+
+  // Find rows by definition ID
+  const allRows = [
+    ...elements.itemsBody.querySelectorAll("tr"),
+    ...elements.permanentItemsBody.querySelectorAll("tr")
+  ];
+
+  const ballast1Row = allRows.find(row => row.dataset.definitionId === ballast1Def.id);
+  const ballast2Row = allRows.find(row => row.dataset.definitionId === ballast2Def.id);
+
+  if (!ballast1Row || !ballast2Row) {
+    return;
+  }
+
+  const ballast1Input = ballast1Row.querySelector('[data-field="weight"]');
+  const ballast2Input = ballast2Row.querySelector('[data-field="weight"]');
+
+  if (!ballast1Input || !ballast2Input) {
+    return;
+  }
+
+  // Create or get tooltips (append to body to avoid clipping)
+  let ballast1Tooltip = document.querySelector('[data-ballast-tooltip="ballast1"]');
+  let ballast2Tooltip = document.querySelector('[data-ballast-tooltip="ballast2"]');
+
+  if (!ballast1Tooltip) {
+    ballast1Tooltip = document.createElement("div");
+    ballast1Tooltip.className = "ballast-tooltip";
+    ballast1Tooltip.setAttribute("data-ballast-tooltip", "ballast1");
+    document.body.appendChild(ballast1Tooltip);
+  }
+
+  if (!ballast2Tooltip) {
+    ballast2Tooltip = document.createElement("div");
+    ballast2Tooltip.className = "ballast-tooltip";
+    ballast2Tooltip.setAttribute("data-ballast-tooltip", "ballast2");
+    document.body.appendChild(ballast2Tooltip);
+  }
+
+  // Helper function to position tooltip above input
+  const positionTooltip = (tooltip, input) => {
+    const rect = input.getBoundingClientRect();
+    tooltip.style.position = "fixed";
+    tooltip.style.left = (rect.left + rect.width / 2) + "px";
+    tooltip.style.top = (rect.top - 12) + "px";
+    tooltip.style.transform = "translateX(-50%)";
+  };
+
+  // Helper function to hide tooltips immediately
+  const hideTooltips = () => {
+    ballast1Tooltip.style.display = "none";
+    ballast2Tooltip.style.display = "none";
+  };
+
+  // Focus handler for ballast1
+  const ballast1FocusHandler = () => {
+    const aircraft = aircraftFromForm();
+    const items = combinedItemsFromForm();
+    const ballastAdjustment = calculateWaterBallastAdjustment(aircraft, items, state.referenceWetCg);
+    if (ballastAdjustment && ballastAdjustment.ballast2.currentWeight > 0 && ballastAdjustment.ballast1.suggestedWeight !== null) {
+      const suggestedValue = ballastAdjustment.ballast1.suggestedWeight.toFixed(1);
+      ballast1Tooltip.textContent = `${suggestedValue}`;
+      positionTooltip(ballast1Tooltip, ballast1Input);
+      ballast1Tooltip.style.display = "block";
+      ballast1Tooltip.onmousedown = (e) => {
+        e.preventDefault(); // Prevent input blur
+        ballast1Input.value = suggestedValue.endsWith(".0") ? String(Math.round(Number(suggestedValue))) : suggestedValue;
+        ballast1Input.dispatchEvent(new Event("input", { bubbles: true }));
+        ballast1Input.dispatchEvent(new Event("change", { bubbles: true }));
+        ballast1Tooltip.style.display = "none";
+      };
+      ballast1Tooltip.onclick = null;
+    } else {
+      ballast1Tooltip.onclick = null;
+    }
+  };
+
+  // Focus handler for ballast2
+  const ballast2FocusHandler = () => {
+    const aircraft = aircraftFromForm();
+    const items = combinedItemsFromForm();
+    const ballastAdjustment = calculateWaterBallastAdjustment(aircraft, items, state.referenceWetCg);
+    if (ballastAdjustment && ballastAdjustment.ballast1.currentWeight > 0 && ballastAdjustment.ballast2.suggestedWeight !== null) {
+      const suggestedValue = ballastAdjustment.ballast2.suggestedWeight.toFixed(1);
+      ballast2Tooltip.textContent = `${suggestedValue}`;
+      positionTooltip(ballast2Tooltip, ballast2Input);
+      ballast2Tooltip.style.display = "block";
+      ballast2Tooltip.onmousedown = (e) => {
+        e.preventDefault();
+        ballast2Input.value = suggestedValue.endsWith(".0") ? String(Math.round(Number(suggestedValue))) : suggestedValue;
+        ballast2Input.dispatchEvent(new Event("input", { bubbles: true }));
+        ballast2Input.dispatchEvent(new Event("change", { bubbles: true }));
+        ballast2Tooltip.style.display = "none";
+      };
+      ballast2Tooltip.onclick = null;
+    } else {
+      ballast2Tooltip.onclick = null;
+    }
+  };
+
+  // Add listeners
+  ballast1Input.addEventListener("focus", ballast1FocusHandler);
+  ballast2Input.addEventListener("focus", ballast2FocusHandler);
+  ballast1Input.addEventListener("blur", hideTooltips);
+  ballast2Input.addEventListener("blur", hideTooltips);
+  // No delayed hide or cancel needed
 }
 
 function syncItemsFromDefinitions() {
@@ -1085,6 +1226,16 @@ async function loadSelectedProfile() {
   state.loadedProfileName = profile.name || "";
   state.loadedProfileIsDefault = Boolean(profile.isDefault);
   writeProfileToForm(profile);
+  
+  // Capture reference CG when profile is loaded
+  const aircraft = aircraftFromForm();
+  const items = combinedItemsFromForm();
+  const { wetTotals } = calculateDryAndWetTotals(aircraft, items);
+  state.referenceWetCg = wetTotals.cg;
+  
+  // Attach water ballast focus listeners now that reference CG is set
+  attachWaterBallastFocusListeners();
+  
   updateProfileDeleteAvailability();
   syncProfileControlAvailability();
   setStatus(t("status.loadedProfile", { name: profile.name }));
