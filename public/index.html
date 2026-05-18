@@ -199,6 +199,7 @@
           <table>
             <thead>
               <tr>
+                <th class="reorder-col" aria-label="Reorder"></th>
                 <th data-i18n="items.item">Item</th>
                 <th data-i18n="setup.armMm">Arm (mm)</th>
                 <th data-i18n="setup.weightFactor">Weight Factor</th>
@@ -222,6 +223,15 @@
 
     <template id="itemDefinitionRowTemplate">
       <tr>
+        <td class="reorder-col">
+          <span class="reorder-handle" data-role="reorder-handle" draggable="true" title="Drag to reorder" aria-label="Drag to reorder">
+            <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
+              <path d="M5 7h14" />
+              <path d="M5 12h14" />
+              <path d="M5 17h14" />
+            </svg>
+          </span>
+        </td>
         <td><input data-field="name" type="text" placeholder="Pilot" data-i18n-attr="placeholder:template.pilotPlaceholder" /></td>
         <td><input data-field="arm" type="number" step="1" value="0" /></td>
         <td><input data-field="weightFactor" type="number" min="0" max="1" step="0.01" value="1" /></td>

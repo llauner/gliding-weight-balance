@@ -728,11 +728,44 @@ th {
 }
 
 #itemDefinitionsBody tr {
-  cursor: grab;
+  cursor: default;
 }
 
 #itemDefinitionsBody tr.dragging {
   opacity: 0.6;
+}
+
+.reorder-col {
+  width: 2.1rem;
+  text-align: center;
+}
+
+.reorder-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: grab;
+}
+
+.reorder-handle svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+}
+
+.reorder-handle:active {
+  cursor: grabbing;
+}
+
+#itemDefinitionsBody tr.dragging .reorder-handle {
+  color: var(--primary);
 }
 
 tr:hover {

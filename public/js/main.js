@@ -489,6 +489,9 @@ function setAircraftSetupEditable(isEditable) {
     return;
   }
 
+  // Keep the details panel state in sync with lock state.
+  elements.aircraftSetupPanel.open = Boolean(isEditable);
+
   const shouldDisable = !isEditable;
   const controls = elements.aircraftSetupPanel.querySelectorAll("input, select, textarea, button");
   controls.forEach((control) => {
@@ -502,7 +505,12 @@ function setAircraftSetupEditable(isEditable) {
   elements.aircraftSetupPanel.setAttribute("aria-disabled", String(shouldDisable));
 
   elements.itemDefinitionsBody.querySelectorAll("tr").forEach((row) => {
-    row.draggable = isEditable;
+    const reorderHandle = row.querySelector('[data-role="reorder-handle"]');
+    if (reorderHandle) {
+      reorderHandle.draggable = isEditable;
+      reorderHandle.style.opacity = isEditable ? "1" : "0.45";
+      reorderHandle.style.pointerEvents = isEditable ? "auto" : "none";
+    }
   });
 }
 
@@ -610,22 +618,24 @@ function addItemDefinitionRow(item = { name: "", arm: 0, weightFactor: 1, perman
   row.querySelector('[data-field="waterBallast"]').checked = Boolean(item.waterBallast);
   row.querySelector('[data-field="name"]').placeholder = t("template.pilotPlaceholder");
   const removeButton = row.querySelector('[data-action="remove"]');
+  const reorderHandle = row.querySelector('[data-role="reorder-handle"]');
   removeButton.title = t("template.removeItem");
   removeButton.setAttribute("aria-label", t("template.removeItem"));
 
-  row.draggable = true;
-  row.addEventListener("dragstart", (event) => {
-    row.classList.add("dragging");
-    if (event.dataTransfer) {
-      event.dataTransfer.effectAllowed = "move";
-      event.dataTransfer.setData("text/plain", definitionId);
-    }
-  });
-  row.addEventListener("dragend", () => {
-    row.classList.remove("dragging");
-    syncItemsFromDefinitions();
-    recalculateAndRender();
-  });
+  if (reorderHandle) {
+    reorderHandle.addEventListener("dragstart", (event) => {
+      row.classList.add("dragging");
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", definitionId);
+      }
+    });
+    reorderHandle.addEventListener("dragend", () => {
+      row.classList.remove("dragging");
+      syncItemsFromDefinitions();
+      recalculateAndRender();
+    });
+  }
 
   const onDefinitionChange = () => {
     syncItemsFromDefinitions();
