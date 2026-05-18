@@ -103,7 +103,7 @@ const state = {
   loadedProfileIsDefault: false,
   pendingDeleteConfirmResolve: null,
   referenceWetCg: null,
-  chartCollapsed: false
+  chartCollapsed: true
 };
 
 let activeBallastTooltip = null;
@@ -176,11 +176,19 @@ function updateActiveBallastTooltipPosition() {
     return;
   }
 
-  const isVisible = positionTooltipAboveInput(activeBallastTooltip, activeBallastInput);
-  if (!isVisible) {
-    activeBallastTooltip = null;
-    activeBallastInput = null;
-  }
+  // Debounce: iOS keyboard animation fires rapid resize events that can
+  // transiently report the input as off-screen. Wait for layout to settle.
+  clearTimeout(updateActiveBallastTooltipPosition._timer);
+  updateActiveBallastTooltipPosition._timer = setTimeout(() => {
+    if (!activeBallastTooltip || !activeBallastInput || activeBallastTooltip.style.display !== "block") {
+      return;
+    }
+    const isVisible = positionTooltipAboveInput(activeBallastTooltip, activeBallastInput);
+    if (!isVisible) {
+      activeBallastTooltip = null;
+      activeBallastInput = null;
+    }
+  }, 200);
 }
 
 function initializeBallastTooltipTracking() {
@@ -792,6 +800,16 @@ function attachWaterBallastFocusListeners() {
         activeBallastTooltip = null;
         activeBallastInput = null;
       };
+      // iOS: touchstart fires before blur; mirror the mousedown copy logic
+      ballast1Tooltip.ontouchstart = (e) => {
+        e.preventDefault();
+        ballast1Input.value = formatSuggestedValueForInput(suggestedValue);
+        ballast1Input.dispatchEvent(new Event("input", { bubbles: true }));
+        ballast1Input.dispatchEvent(new Event("change", { bubbles: true }));
+        ballast1Tooltip.style.display = "none";
+        activeBallastTooltip = null;
+        activeBallastInput = null;
+      };
       ballast1Tooltip.onclick = null;
     } else {
       ballast1Tooltip.onclick = null;
@@ -811,6 +829,16 @@ function attachWaterBallastFocusListeners() {
       activeBallastTooltip = ballast2Tooltip;
       activeBallastInput = ballast2Input;
       ballast2Tooltip.onmousedown = (e) => {
+        e.preventDefault();
+        ballast2Input.value = formatSuggestedValueForInput(suggestedValue);
+        ballast2Input.dispatchEvent(new Event("input", { bubbles: true }));
+        ballast2Input.dispatchEvent(new Event("change", { bubbles: true }));
+        ballast2Tooltip.style.display = "none";
+        activeBallastTooltip = null;
+        activeBallastInput = null;
+      };
+      // iOS: touchstart fires before blur; mirror the mousedown copy logic
+      ballast2Tooltip.ontouchstart = (e) => {
         e.preventDefault();
         ballast2Input.value = formatSuggestedValueForInput(suggestedValue);
         ballast2Input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -1716,7 +1744,7 @@ async function init() {
   });
 
   bindEvents();
-  setChartCollapsed(false);
+  setChartCollapsed(true);
 
   if (elements.aircraftSetupToggle) {
     setAircraftSetupEditable(canManageProfiles() && elements.aircraftSetupToggle.checked);
