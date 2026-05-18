@@ -137,13 +137,19 @@ function showBallastTooltipForInput(tooltip, input, text) {
     if (container && tooltip.parentElement !== container) {
       container.appendChild(tooltip);
     }
-    tooltip.style.position = "static";
-    tooltip.style.left = "";
-    tooltip.style.top = "";
-    tooltip.style.transform = "none";
-    tooltip.style.display = "inline-block";
-    tooltip.style.marginLeft = "0.5rem";
-    tooltip.style.verticalAlign = "middle";
+    if (container) {
+      container.style.position = "relative";
+      const centerX = input.offsetLeft + input.offsetWidth / 2;
+      const topY = input.offsetTop - 6;
+      tooltip.style.position = "absolute";
+      tooltip.style.left = `${centerX}px`;
+      tooltip.style.top = `${topY}px`;
+      tooltip.style.transform = "translate(-50%, -100%)";
+      tooltip.style.display = "block";
+      tooltip.style.marginLeft = "0";
+      tooltip.style.verticalAlign = "";
+      tooltip.style.zIndex = "10";
+    }
     return true;
   }
 
