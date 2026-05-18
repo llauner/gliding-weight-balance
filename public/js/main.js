@@ -140,7 +140,7 @@ function positionTooltipAboveInput(tooltip, input) {
   const viewportOffsetLeft = viewport ? viewport.offsetLeft : 0;
   const viewportOffsetTop = viewport ? viewport.offsetTop : 0;
   const centerX = rect.left + rect.width / 2;
-  const desiredTop = rect.top - 12;
+  const desiredTop = rect.top - 8;
   const clampedX = Math.min(
     viewportOffsetLeft + viewportWidth - 12,
     Math.max(viewportOffsetLeft + 12, centerX)
@@ -153,7 +153,7 @@ function positionTooltipAboveInput(tooltip, input) {
   tooltip.style.position = "fixed";
   tooltip.style.left = clampedX + "px";
   tooltip.style.top = clampedTop + "px";
-  tooltip.style.transform = "translateX(-50%)";
+  tooltip.style.transform = "translate(-50%, -100%)";
   return true;
 }
 
@@ -755,8 +755,16 @@ function attachWaterBallastFocusListeners() {
     document.body.appendChild(ballast2Tooltip);
   }
 
+  const formatSuggestedValueWithDot = (value) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return String(value).replace(/,/g, ".");
+    }
+    return numeric.toFixed(1).replace(/,/g, ".");
+  };
+
   const formatSuggestedValueForInput = (valueWithDotDecimal) => {
-    const normalized = String(valueWithDotDecimal).replace(/,/g, ".");
+    const normalized = formatSuggestedValueWithDot(valueWithDotDecimal);
     if (normalized.endsWith(".0")) {
       return String(Math.round(Number(normalized)));
     }
@@ -778,8 +786,8 @@ function attachWaterBallastFocusListeners() {
     const items = combinedItemsFromForm();
     const ballastAdjustment = calculateWaterBallastAdjustment(aircraft, items, state.referenceWetCg);
     if (ballastAdjustment && ballastAdjustment.ballast2.currentWeight > 0 && ballastAdjustment.ballast1.suggestedWeight !== null) {
-      const suggestedValue = ballastAdjustment.ballast1.suggestedWeight.toFixed(1);
-      ballast1Tooltip.textContent = `${suggestedValue}`;
+      const suggestedValue = formatSuggestedValueWithDot(ballastAdjustment.ballast1.suggestedWeight);
+      ballast1Tooltip.textContent = suggestedValue;
       positionTooltipAboveInput(ballast1Tooltip, ballast1Input);
       ballast1Tooltip.style.display = "block";
       activeBallastTooltip = ballast1Tooltip;
@@ -818,8 +826,8 @@ function attachWaterBallastFocusListeners() {
     const items = combinedItemsFromForm();
     const ballastAdjustment = calculateWaterBallastAdjustment(aircraft, items, state.referenceWetCg);
     if (ballastAdjustment && ballastAdjustment.ballast1.currentWeight > 0 && ballastAdjustment.ballast2.suggestedWeight !== null) {
-      const suggestedValue = ballastAdjustment.ballast2.suggestedWeight.toFixed(1);
-      ballast2Tooltip.textContent = `${suggestedValue}`;
+      const suggestedValue = formatSuggestedValueWithDot(ballastAdjustment.ballast2.suggestedWeight);
+      ballast2Tooltip.textContent = suggestedValue;
       positionTooltipAboveInput(ballast2Tooltip, ballast2Input);
       ballast2Tooltip.style.display = "block";
       activeBallastTooltip = ballast2Tooltip;
