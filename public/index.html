@@ -224,7 +224,10 @@
     <template id="itemRowTemplate">
       <tr>
         <td class="item-name"></td>
-        <td><input data-field="weight" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" value="0" /></td>
+        <td style="position:relative;">
+          <input data-field="weight" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" value="0" />
+          <button data-action="reset-ballast" class="btn btn-icon danger ballast-reset-btn" type="button" title="Reset" aria-label="Reset" style="display:none; position:absolute; right:0.25rem; top:50%; transform:translateY(-50%);">✕</button>
+        </td>
       </tr>
     </template>
 

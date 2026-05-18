@@ -703,7 +703,10 @@ function renderItemRows(definitions, existingWeights = new Map()) {
     row.dataset.definitionId = definition.id || createId("def");
     row.querySelector(".item-name").textContent = definition.name;
     const weightInput = row.querySelector('[data-field="weight"]');
+    const resetBtn = row.querySelector('[data-action="reset-ballast"]');
+    
     weightInput.value = weightFor(definition.id, index);
+    
     weightInput.addEventListener("focus", () => {
       if (Number(weightInput.value) === 0) {
         weightInput.value = "";
@@ -717,6 +720,27 @@ function renderItemRows(definitions, existingWeights = new Map()) {
     });
     row.addEventListener("input", recalculateAndRender);
     row.addEventListener("change", recalculateAndRender);
+    
+    // Water ballast reset button logic
+    if (definition.waterBallast && resetBtn) {
+      const updateResetBtn = () => {
+        resetBtn.style.display = (weightInput.value !== "0" && weightInput.value !== "") ? "inline-block" : "none";
+      };
+      weightInput.addEventListener("input", updateResetBtn);
+      weightInput.addEventListener("change", updateResetBtn);
+      weightInput.addEventListener("blur", updateResetBtn);
+      updateResetBtn();
+      resetBtn.addEventListener("click", () => {
+        weightInput.value = "0";
+        weightInput.dispatchEvent(new Event("input", { bubbles: true }));
+        weightInput.dispatchEvent(new Event("change", { bubbles: true }));
+        weightInput.dispatchEvent(new Event("blur", { bubbles: true }));
+        resetBtn.style.display = "none";
+      });
+    } else if (resetBtn) {
+      resetBtn.style.display = "none";
+    }
+    
     if (definition.permanent) {
       elements.permanentItemsBody.appendChild(row);
     } else {

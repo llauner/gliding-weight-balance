@@ -555,6 +555,29 @@ select:focus {
   border: 1px solid #f5e8e6;
 }
 
+.ballast-reset-btn {
+  min-width: 1.7rem;
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 0;
+  font-size: 1.1rem;
+  line-height: 1;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.ballast-reset-btn:active {
+  background: #fce4e1;
+}
+
+.ballast-reset-btn:focus {
+  outline: 2px solid var(--danger);
+  outline-offset: 1px;
+}
+
 .btn.danger:hover {
   background: #fce4e1;
   box-shadow: var(--shadow-hover);
