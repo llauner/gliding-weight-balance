@@ -1225,6 +1225,8 @@ async function loadSelectedProfile() {
   state.loadedProfileUserId = null;
   state.loadedProfileName = profile.name || "";
   state.loadedProfileIsDefault = Boolean(profile.isDefault);
+  // Reset reference CG so renderItemRows doesn't attach tooltip handlers while CG is from a previous profile
+  state.referenceWetCg = null;
   writeProfileToForm(profile);
   
   // Capture reference CG when profile is loaded
