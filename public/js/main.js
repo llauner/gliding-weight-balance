@@ -111,6 +111,7 @@ let activeBallastInput = null;
 let activeBallastTooltipShowTime = null; // Track when tooltip appeared for grace period
 let ballastTooltipTrackingInitialized = false;
 let ballastTooltipListenersCleanup = null;
+const INLINE_BALLAST_TOOLTIP = true;
 
 const USER_ICON_SVG = '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"></circle><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"></path></svg>';
 const SIGN_OUT_ICON_SVG = '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M10 4H5v16h5"></path><path d="M14 8l4 4-4 4"></path><path d="M18 12H9"></path></svg>';
@@ -126,6 +127,29 @@ function numberValue(input) {
 
 function clampWeightFactor(value) {
   return Math.min(1, Math.max(0, value));
+}
+
+function showBallastTooltipForInput(tooltip, input, text) {
+  tooltip.textContent = text;
+
+  if (INLINE_BALLAST_TOOLTIP) {
+    const container = input.parentElement;
+    if (container && tooltip.parentElement !== container) {
+      container.appendChild(tooltip);
+    }
+    tooltip.style.position = "static";
+    tooltip.style.left = "";
+    tooltip.style.top = "";
+    tooltip.style.transform = "none";
+    tooltip.style.display = "inline-block";
+    tooltip.style.marginLeft = "0.5rem";
+    tooltip.style.verticalAlign = "middle";
+    return true;
+  }
+
+  positionTooltipAboveInput(tooltip, input);
+  tooltip.style.display = "block";
+  return true;
 }
 
 function positionTooltipAboveInput(tooltip, input) {
@@ -158,6 +182,10 @@ function positionTooltipAboveInput(tooltip, input) {
 }
 
 function updateActiveBallastTooltipPosition() {
+  if (INLINE_BALLAST_TOOLTIP) {
+    return;
+  }
+
   if (!activeBallastTooltip || !activeBallastInput || activeBallastTooltip.style.display !== "block") {
     return;
   }
@@ -697,7 +725,9 @@ function attachWaterBallastFocusListeners() {
     ballastTooltipListenersCleanup = null;
   }
 
-  initializeBallastTooltipTracking();
+  if (!INLINE_BALLAST_TOOLTIP) {
+    initializeBallastTooltipTracking();
+  }
 
   if (state.referenceWetCg === null) {
     return;
@@ -787,9 +817,7 @@ function attachWaterBallastFocusListeners() {
     const ballastAdjustment = calculateWaterBallastAdjustment(aircraft, items, state.referenceWetCg);
     if (ballastAdjustment && ballastAdjustment.ballast2.currentWeight > 0 && ballastAdjustment.ballast1.suggestedWeight !== null) {
       const suggestedValue = formatSuggestedValueWithDot(ballastAdjustment.ballast1.suggestedWeight);
-      ballast1Tooltip.textContent = suggestedValue;
-      positionTooltipAboveInput(ballast1Tooltip, ballast1Input);
-      ballast1Tooltip.style.display = "block";
+      showBallastTooltipForInput(ballast1Tooltip, ballast1Input, suggestedValue);
       activeBallastTooltip = ballast1Tooltip;
       activeBallastInput = ballast1Input;
       activeBallastTooltipShowTime = Date.now(); // Start grace period
@@ -827,9 +855,7 @@ function attachWaterBallastFocusListeners() {
     const ballastAdjustment = calculateWaterBallastAdjustment(aircraft, items, state.referenceWetCg);
     if (ballastAdjustment && ballastAdjustment.ballast1.currentWeight > 0 && ballastAdjustment.ballast2.suggestedWeight !== null) {
       const suggestedValue = formatSuggestedValueWithDot(ballastAdjustment.ballast2.suggestedWeight);
-      ballast2Tooltip.textContent = suggestedValue;
-      positionTooltipAboveInput(ballast2Tooltip, ballast2Input);
-      ballast2Tooltip.style.display = "block";
+      showBallastTooltipForInput(ballast2Tooltip, ballast2Input, suggestedValue);
       activeBallastTooltip = ballast2Tooltip;
       activeBallastInput = ballast2Input;
       activeBallastTooltipShowTime = Date.now(); // Start grace period
