@@ -100,6 +100,10 @@ const state = {
   referenceWetCg: null
 };
 
+let activeBallastTooltip = null;
+let activeBallastInput = null;
+let ballastTooltipTrackingInitialized = false;
+
 const USER_ICON_SVG = '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"></circle><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"></path></svg>';
 const SIGN_OUT_ICON_SVG = '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M10 4H5v16h5"></path><path d="M14 8l4 4-4 4"></path><path d="M18 12H9"></path></svg>';
 
@@ -114,6 +118,79 @@ function numberValue(input) {
 
 function clampWeightFactor(value) {
   return Math.min(1, Math.max(0, value));
+}
+
+function positionTooltipAboveInput(tooltip, input) {
+  if (!tooltip || !input) {
+    return false;
+  }
+
+  const rect = input.getBoundingClientRect();
+  const viewport = window.visualViewport;
+  const viewportWidth = viewport ? viewport.width : window.innerWidth;
+  const viewportHeight = viewport ? viewport.height : window.innerHeight;
+  const viewportOffsetLeft = viewport ? viewport.offsetLeft : 0;
+  const viewportOffsetTop = viewport ? viewport.offsetTop : 0;
+  const viewportRight = viewportOffsetLeft + viewportWidth;
+  const viewportBottom = viewportOffsetTop + viewportHeight;
+
+  // Hide tooltip when its linked input is outside the visible viewport.
+  // This keeps tooltip/input association consistent during scrolling.
+  const inputOutOfView =
+    rect.bottom < viewportOffsetTop ||
+    rect.top > viewportBottom ||
+    rect.right < viewportOffsetLeft ||
+    rect.left > viewportRight;
+
+  if (inputOutOfView) {
+    tooltip.style.display = "none";
+    return false;
+  }
+
+  const centerX = rect.left + rect.width / 2;
+  const desiredTop = rect.top - 12;
+  const clampedX = Math.min(
+    viewportOffsetLeft + viewportWidth - 12,
+    Math.max(viewportOffsetLeft + 12, centerX)
+  );
+  const clampedTop = Math.min(
+    viewportOffsetTop + viewportHeight - 12,
+    Math.max(viewportOffsetTop + 12, desiredTop)
+  );
+
+  tooltip.style.position = "fixed";
+  tooltip.style.left = clampedX + "px";
+  tooltip.style.top = clampedTop + "px";
+  tooltip.style.transform = "translateX(-50%)";
+  return true;
+}
+
+function updateActiveBallastTooltipPosition() {
+  if (!activeBallastTooltip || !activeBallastInput || activeBallastTooltip.style.display !== "block") {
+    return;
+  }
+
+  const isVisible = positionTooltipAboveInput(activeBallastTooltip, activeBallastInput);
+  if (!isVisible) {
+    activeBallastTooltip = null;
+    activeBallastInput = null;
+  }
+}
+
+function initializeBallastTooltipTracking() {
+  if (ballastTooltipTrackingInitialized) {
+    return;
+  }
+
+  window.addEventListener("scroll", updateActiveBallastTooltipPosition, true);
+  window.addEventListener("resize", updateActiveBallastTooltipPosition);
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("scroll", updateActiveBallastTooltipPosition);
+    window.visualViewport.addEventListener("resize", updateActiveBallastTooltipPosition);
+  }
+
+  ballastTooltipTrackingInitialized = true;
 }
 
 function setStatus(message, isError = false) {
@@ -582,6 +659,8 @@ function renderItemRows(definitions, existingWeights = new Map()) {
 }
 
 function attachWaterBallastFocusListeners() {
+  initializeBallastTooltipTracking();
+
   if (state.referenceWetCg === null) {
     return;
   }
@@ -638,19 +717,20 @@ function attachWaterBallastFocusListeners() {
     document.body.appendChild(ballast2Tooltip);
   }
 
-  // Helper function to position tooltip above input
-  const positionTooltip = (tooltip, input) => {
-    const rect = input.getBoundingClientRect();
-    tooltip.style.position = "fixed";
-    tooltip.style.left = (rect.left + rect.width / 2) + "px";
-    tooltip.style.top = (rect.top - 12) + "px";
-    tooltip.style.transform = "translateX(-50%)";
+  const formatSuggestedValueForInput = (valueWithDotDecimal) => {
+    const normalized = String(valueWithDotDecimal).replace(/,/g, ".");
+    if (normalized.endsWith(".0")) {
+      return String(Math.round(Number(normalized)));
+    }
+    return normalized;
   };
 
   // Helper function to hide tooltips immediately
   const hideTooltips = () => {
     ballast1Tooltip.style.display = "none";
     ballast2Tooltip.style.display = "none";
+    activeBallastTooltip = null;
+    activeBallastInput = null;
   };
 
   // Focus handler for ballast1
@@ -661,14 +741,18 @@ function attachWaterBallastFocusListeners() {
     if (ballastAdjustment && ballastAdjustment.ballast2.currentWeight > 0 && ballastAdjustment.ballast1.suggestedWeight !== null) {
       const suggestedValue = ballastAdjustment.ballast1.suggestedWeight.toFixed(1);
       ballast1Tooltip.textContent = `${suggestedValue}`;
-      positionTooltip(ballast1Tooltip, ballast1Input);
+      positionTooltipAboveInput(ballast1Tooltip, ballast1Input);
       ballast1Tooltip.style.display = "block";
+      activeBallastTooltip = ballast1Tooltip;
+      activeBallastInput = ballast1Input;
       ballast1Tooltip.onmousedown = (e) => {
         e.preventDefault(); // Prevent input blur
-        ballast1Input.value = suggestedValue.endsWith(".0") ? String(Math.round(Number(suggestedValue))) : suggestedValue;
+        ballast1Input.value = formatSuggestedValueForInput(suggestedValue);
         ballast1Input.dispatchEvent(new Event("input", { bubbles: true }));
         ballast1Input.dispatchEvent(new Event("change", { bubbles: true }));
         ballast1Tooltip.style.display = "none";
+        activeBallastTooltip = null;
+        activeBallastInput = null;
       };
       ballast1Tooltip.onclick = null;
     } else {
@@ -684,14 +768,18 @@ function attachWaterBallastFocusListeners() {
     if (ballastAdjustment && ballastAdjustment.ballast1.currentWeight > 0 && ballastAdjustment.ballast2.suggestedWeight !== null) {
       const suggestedValue = ballastAdjustment.ballast2.suggestedWeight.toFixed(1);
       ballast2Tooltip.textContent = `${suggestedValue}`;
-      positionTooltip(ballast2Tooltip, ballast2Input);
+      positionTooltipAboveInput(ballast2Tooltip, ballast2Input);
       ballast2Tooltip.style.display = "block";
+      activeBallastTooltip = ballast2Tooltip;
+      activeBallastInput = ballast2Input;
       ballast2Tooltip.onmousedown = (e) => {
         e.preventDefault();
-        ballast2Input.value = suggestedValue.endsWith(".0") ? String(Math.round(Number(suggestedValue))) : suggestedValue;
+        ballast2Input.value = formatSuggestedValueForInput(suggestedValue);
         ballast2Input.dispatchEvent(new Event("input", { bubbles: true }));
         ballast2Input.dispatchEvent(new Event("change", { bubbles: true }));
         ballast2Tooltip.style.display = "none";
+        activeBallastTooltip = null;
+        activeBallastInput = null;
       };
       ballast2Tooltip.onclick = null;
     } else {
