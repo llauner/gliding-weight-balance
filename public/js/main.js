@@ -108,6 +108,7 @@ const state = {
 
 let activeBallastTooltip = null;
 let activeBallastInput = null;
+let activeBallastTooltipShowTime = null; // Track when tooltip appeared for grace period
 let ballastTooltipTrackingInitialized = false;
 
 const USER_ICON_SVG = '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"></circle><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"></path></svg>';
@@ -183,12 +184,18 @@ function updateActiveBallastTooltipPosition() {
     if (!activeBallastTooltip || !activeBallastInput || activeBallastTooltip.style.display !== "block") {
       return;
     }
+    // Respect grace period: don't hide tooltip for 500ms after it appears
+    const elapsedSinceShow = Date.now() - (activeBallastTooltipShowTime || 0);
+    if (elapsedSinceShow < 500) {
+      return;
+    }
     const isVisible = positionTooltipAboveInput(activeBallastTooltip, activeBallastInput);
     if (!isVisible) {
       activeBallastTooltip = null;
       activeBallastInput = null;
+      activeBallastTooltipShowTime = null;
     }
-  }, 200);
+  }, 350);
 }
 
 function initializeBallastTooltipTracking() {
@@ -791,6 +798,7 @@ function attachWaterBallastFocusListeners() {
       ballast1Tooltip.style.display = "block";
       activeBallastTooltip = ballast1Tooltip;
       activeBallastInput = ballast1Input;
+      activeBallastTooltipShowTime = Date.now(); // Start grace period
       ballast1Tooltip.onmousedown = (e) => {
         e.preventDefault(); // Prevent input blur
         ballast1Input.value = formatSuggestedValueForInput(suggestedValue);
@@ -828,6 +836,7 @@ function attachWaterBallastFocusListeners() {
       ballast2Tooltip.style.display = "block";
       activeBallastTooltip = ballast2Tooltip;
       activeBallastInput = ballast2Input;
+      activeBallastTooltipShowTime = Date.now(); // Start grace period
       ballast2Tooltip.onmousedown = (e) => {
         e.preventDefault();
         ballast2Input.value = formatSuggestedValueForInput(suggestedValue);
@@ -856,9 +865,22 @@ function attachWaterBallastFocusListeners() {
   // Add listeners
   ballast1Input.addEventListener("focus", ballast1FocusHandler);
   ballast2Input.addEventListener("focus", ballast2FocusHandler);
-  ballast1Input.addEventListener("blur", hideTooltips);
-  ballast2Input.addEventListener("blur", hideTooltips);
-  // No delayed hide or cancel needed
+  
+  // On iOS, blur fires immediately when keyboard appears, even before interaction completes.
+  // Instead of hiding on blur, hide only when another focusable element gets focus.
+  // But respect the grace period: wait 500ms after tooltip appears before allowing hide.
+  // This lets the tooltip persist for the entire iOS interaction.
+  document.addEventListener("focus", (e) => {
+    const target = e.target;
+    // If a different input got focus, and grace period has elapsed, hide the tooltips
+    if (target !== ballast1Input && target !== ballast2Input && (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
+      const elapsedSinceShow = Date.now() - (activeBallastTooltipShowTime || 0);
+      if (elapsedSinceShow >= 500) {
+        hideTooltips();
+        activeBallastTooltipShowTime = null;
+      }
+    }
+  }, true); // Use capture phase to catch all focus events
 }
 
 function syncItemsFromDefinitions() {
