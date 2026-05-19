@@ -129,6 +129,7 @@
             <article class="result-card">
               <span data-i18n="results.calculatedCg">Calculated CG</span>
               <strong id="cgValue">0 mm</strong>
+              <span id="frontSeatRangeValue" style="font-size:0.65rem;font-weight:400;opacity:0.8;margin-top:1.2rem;display:none;"></span>
             </article>
             <article class="result-card status">
               <span data-i18n="results.balanceStatus">Balance Status</span>
@@ -171,7 +172,7 @@
               <thead>
                 <tr>
                   <th data-i18n="items.item">Item</th>
-                  <th data-i18n="items.weightKg">Weight (kg)</th>
+                  <th data-i18n="items.weightKgOrCount">Weight (kg or #)</th>
                 </tr>
               </thead>
               <tbody id="permanentItemsBody"></tbody>
@@ -193,6 +194,8 @@
           <label><span data-i18n="setup.emptyArm">Empty Arm (mm)</span><input id="emptyArm" type="number" step="1" value="480" /></label>
           <label><span data-i18n="setup.wingArea">Wing Area (m²)</span><input id="wingArea" type="number" step="0.01" value="10.5" /></label>
           <label><span data-i18n="setup.maxWeight">Max Weight (kg)</span><input id="maxWeight" type="number" step="0.1" value="600" /></label>
+          <label><span data-i18n="setup.maxPayloadInFuselage">Max Payload in the Fuselage (kg)</span><input id="maxPayloadInFuselage" type="number" step="0.1" value="120" /></label>
+          <span class="grid-break" aria-hidden="true"></span>
           <label><span data-i18n="setup.minCg">Min CG (mm)</span><input id="minCg" type="number" step="1" value="390" /></label>
           <label><span data-i18n="setup.maxCg">Max CG (mm)</span><input id="maxCg" type="number" step="1" value="510" /></label>
           <label><span data-i18n="setup.idealMinCg">Ideal Min CG (mm)</span><input id="idealMinCg" type="number" step="1" value="420" /></label>

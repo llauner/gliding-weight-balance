@@ -209,6 +209,7 @@ function normalizeProfile(payload) {
       emptyArm: Number(aircraft.emptyArm) || 0,
       wingArea: Number(aircraft.wingArea) || 0,
       maxWeight: Number(aircraft.maxWeight) || 0,
+      maxPayloadInFuselage: Number(aircraft.maxPayloadInFuselage) || 0,
       minCg: Number(aircraft.minCg) || 0,
       maxCg: Number(aircraft.maxCg) || 0,
       idealMinCg: Number(aircraft.idealMinCg) || 420,

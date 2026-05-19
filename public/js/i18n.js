@@ -51,13 +51,15 @@ const resources = {
         calculatedCg: "Calculated CG",
         balanceStatus: "Balance Status",
         maxPermissibleWaterBallast: "Max Permissible Water Ballast",
-        unknown: "UNKNOWN"
+        unknown: "UNKNOWN",
+        pilotMinMax: "Pilot Min/Max: {{min}} / {{max}} kg"
       },
       items: {
         title: "W&B Items",
         permanentItems: "Permanent Items",
         item: "Item",
-        weightKg: "Weight (kg)"
+        weightKg: "Weight (kg)",
+        weightKgOrCount: "Weight (kg or #)"
       },
       setup: {
         title: "Aircraft Setup",
@@ -65,6 +67,7 @@ const resources = {
         emptyArm: "Empty Arm (mm)",
         wingArea: "Wing Area (m²)",
         maxWeight: "Max Weight (kg)",
+        maxPayloadInFuselage: "Max Payload in the Fuselage (kg)",
         minCg: "Min CG (mm)",
         maxCg: "Max CG (mm)",
         idealMinCg: "Ideal Min CG (mm)",
@@ -187,13 +190,15 @@ const resources = {
         calculatedCg: "CG calcule",
         balanceStatus: "Centrage",
         maxPermissibleWaterBallast: "Ballast maximal autorise",
-        unknown: "INCONNU"
+        unknown: "INCONNU",
+        pilotMinMax: "Pilote Min/Max: {{min}} / {{max}} kg"
       },
       items: {
         title: "Elements M&C",
         permanentItems: "Elements permanents",
         item: "Element",
-        weightKg: "Masse (kg)"
+        weightKg: "Masse (kg)",
+        weightKgOrCount: "Masse (kg ou #)"
       },
       setup: {
         title: "Configuration Planeur",
@@ -201,6 +206,7 @@ const resources = {
         emptyArm: "Bras a vide (mm)",
         wingArea: "Surface alaire (m²)",
         maxWeight: "Masse max (kg)",
+        maxPayloadInFuselage: "Charge max dans le fuselage (kg)",
         minCg: "CG min (mm)",
         maxCg: "CG max (mm)",
         idealMinCg: "CG ideal min (mm)",

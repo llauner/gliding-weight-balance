@@ -46,6 +46,7 @@ const elements = {
   emptyArm: document.querySelector("#emptyArm"),
   wingArea: document.querySelector("#wingArea"),
   maxWeight: document.querySelector("#maxWeight"),
+  maxPayloadInFuselage: document.querySelector("#maxPayloadInFuselage"),
   minCg: document.querySelector("#minCg"),
   maxCg: document.querySelector("#maxCg"),
   idealMinCg: document.querySelector("#idealMinCg"),
@@ -87,7 +88,8 @@ const elements = {
   addItemDefinitionBtn: document.querySelector("#addItemDefinitionBtn"),
   envelopeCanvas: document.querySelector("#envelopeCanvas"),
   aircraftSetupToggle: document.querySelector("#aircraftSetupToggle"),
-  aircraftSetupPanel: document.querySelector(".aircraft-setup")
+  aircraftSetupPanel: document.querySelector(".aircraft-setup"),
+  frontSeatRangeValue: document.querySelector("#frontSeatRangeValue")
 };
 
 const state = {
@@ -586,6 +588,7 @@ function aircraftFromForm() {
     emptyArm: numberValue(elements.emptyArm),
     wingArea: numberValue(elements.wingArea),
     maxWeight: numberValue(elements.maxWeight),
+    maxPayloadInFuselage: numberValue(elements.maxPayloadInFuselage),
     minCg: numberValue(elements.minCg),
     maxCg: numberValue(elements.maxCg),
     idealMinCg: numberValue(elements.idealMinCg),
@@ -605,6 +608,121 @@ function itemDefinitionsFromForm() {
     waterBallast: row.querySelector('[data-field="waterBallast"]').checked,
     isFrontSeat: row.querySelector('[data-field="frontSeat"]').checked
   }));
+}
+
+/**
+ * Calculates the min and max weight for the front seat item that keeps
+ * the CG within [aircraft.minCg, aircraft.maxCg].
+ *
+ * The formula derives from:
+ *   CG = (M_other + W_fs * ef * A_fs) / (W_other + W_fs * ef)
+ * where W_other / M_other are the contributions from the empty aircraft
+ * plus all non-front-seat items.
+ *
+ * Solving for W_fs at each CG limit gives:
+ *   W_fs = (M_other - C * W_other) / (ef * (C - A_fs))
+ */
+function calculateFrontSeatWeightRange(aircraft, items, frontSeatDefinition) {
+  const minCg = Number(aircraft.minCg);
+  const maxCg = Number(aircraft.maxCg);
+  const A_fs = Number(frontSeatDefinition.arm);
+  const ef = clampWeightFactor(frontSeatDefinition.weightFactor ?? 1);
+
+  if (!Number.isFinite(minCg) || !Number.isFinite(maxCg) || maxCg <= minCg) {
+    return null;
+  }
+  if (!Number.isFinite(A_fs) || ef === 0) {
+    return null;
+  }
+
+  // Sum contributions from everything except the front seat item.
+  const emptyWeight = Number(aircraft.emptyWeight) || 0;
+  const emptyArm   = Number(aircraft.emptyArm)   || 0;
+  let W_other = emptyWeight;
+  let M_other = emptyWeight * emptyArm;
+
+  for (const item of items) {
+    if (item.isFrontSeat) continue;
+    const w = Number(item.weight) || 0;
+    const wf = clampWeightFactor(item.weightFactor ?? 1);
+    const eff = w * wf;
+    W_other += eff;
+    M_other += eff * (Number(item.arm) || 0);
+  }
+
+  // W_fs at each CG boundary (raw weight, before weightFactor).
+  const denomAtMin = ef * (minCg - A_fs);
+  const denomAtMax = ef * (maxCg - A_fs);
+
+  if (Math.abs(denomAtMin) < 1e-9 || Math.abs(denomAtMax) < 1e-9) {
+    return null; // arm coincides with a CG limit – indeterminate
+  }
+
+  const W_at_minCg = (M_other - minCg * W_other) / denomAtMin;
+  const W_at_maxCg = (M_other - maxCg * W_other) / denomAtMax;
+
+  const minWeight = Math.max(0, Math.min(W_at_minCg, W_at_maxCg));
+  const maxWeight = Math.max(0, Math.max(W_at_minCg, W_at_maxCg));
+
+  return { minWeight, maxWeight };
+}
+
+function updateFrontSeatRangeDisplay(aircraft, items) {
+  if (!elements.frontSeatRangeValue) {
+    return;
+  }
+  const definitions = itemDefinitionsFromForm();
+  const frontSeatDef = definitions.find((d) => d.isFrontSeat);
+  if (!frontSeatDef) {
+    elements.frontSeatRangeValue.style.display = "none";
+    return;
+  }
+  const range = calculateFrontSeatWeightRange(aircraft, items, frontSeatDef);
+  if (range) {
+    const nonFrontNonWaterMass = items
+      .filter((item) => !item.isFrontSeat && !item.waterBallast)
+      .reduce((sum, item) => sum + (Number(item.weight) || 0), 0);
+    const payloadMax = Number(aircraft.maxPayloadInFuselage);
+    const payloadLimitedMax = Number.isFinite(payloadMax) && payloadMax > 0
+      ? payloadMax - nonFrontNonWaterMass
+      : range.maxWeight;
+    const adjustedMax = Math.max(0, Math.min(range.maxWeight, payloadLimitedMax));
+
+    const minVal = Math.ceil(range.minWeight);
+    const maxVal = Math.floor(adjustedMax);
+    elements.frontSeatRangeValue.textContent = t("results.pilotMinMax", { min: minVal, max: maxVal });
+    elements.frontSeatRangeValue.style.display = "block";
+  } else {
+    elements.frontSeatRangeValue.style.display = "none";
+  }
+}
+
+function logFrontSeatWeightRange() {
+  const aircraft = aircraftFromForm();
+  const items = combinedItemsFromForm();
+  const definitions = itemDefinitionsFromForm();
+  const frontSeatDef = definitions.find((d) => d.isFrontSeat);
+  if (!frontSeatDef) {
+    return;
+  }
+  const range = calculateFrontSeatWeightRange(aircraft, items, frontSeatDef);
+  if (range) {
+    const nonFrontNonWaterMass = items
+      .filter((item) => !item.isFrontSeat && !item.waterBallast)
+      .reduce((sum, item) => sum + (Number(item.weight) || 0), 0);
+    const payloadMax = Number(aircraft.maxPayloadInFuselage);
+    const payloadLimitedMax = Number.isFinite(payloadMax) && payloadMax > 0
+      ? payloadMax - nonFrontNonWaterMass
+      : range.maxWeight;
+    const adjustedMax = Math.max(0, Math.min(range.maxWeight, payloadLimitedMax));
+
+    console.log(
+      `[Front Seat "${frontSeatDef.name}"] Weight range to stay within CG limits: ` +
+      `min = ${range.minWeight.toFixed(1)} kg, max = ${adjustedMax.toFixed(1)} kg`
+    );
+  } else {
+    console.log(`[Front Seat "${frontSeatDef.name}"] Unable to compute weight range (check CG limits and arm).`);
+  }
 }
 
 function itemWeightsByDefinitionIdFromForm() {
@@ -1063,6 +1181,7 @@ function writeProfileToForm(profile) {
   elements.emptyArm.value = aircraft.emptyArm ?? 0;
   elements.wingArea.value = aircraft.wingArea ?? 0;
   elements.maxWeight.value = aircraft.maxWeight ?? 0;
+  elements.maxPayloadInFuselage.value = aircraft.maxPayloadInFuselage ?? 120;
   elements.minCg.value = aircraft.minCg ?? 0;
   elements.maxCg.value = aircraft.maxCg ?? 0;
   elements.idealMinCg.value = aircraft.idealMinCg ?? 420;
@@ -1533,6 +1652,8 @@ function recalculateAndRender() {
   elements.totalWeightValue.textContent = `${wetTotals.totalWeight.toFixed(1)} kg`;
   elements.wingLoadingValue.textContent = `${wingLoading.toFixed(1)} kg/m²`;
   elements.cgValue.textContent = `${wetTotals.cg.toFixed(0)} mm`;
+  updateFrontSeatRangeDisplay(aircraft, items);
+  logFrontSeatWeightRange();
   elements.maxWaterBallastValue.textContent = `${Math.floor(maxWaterBallast)} kg`;
 
   const statusCard = elements.balanceStatusValue.closest(".result-card.status");
@@ -1657,6 +1778,7 @@ function bindEvents() {
     elements.emptyArm,
     elements.wingArea,
     elements.maxWeight,
+    elements.maxPayloadInFuselage,
     elements.minCg,
     elements.maxCg,
     elements.idealMinCg,
