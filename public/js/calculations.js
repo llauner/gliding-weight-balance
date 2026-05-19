@@ -4,7 +4,7 @@ function toNumber(value) {
 }
 
 function clampWeightFactor(value) {
-  return Math.min(1, Math.max(0, toNumber(value)));
+  return Math.min(10, Math.max(0, toNumber(value)));
 }
 
 export function calculateRows(stations) {

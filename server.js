@@ -24,7 +24,7 @@ function normalizeWeightFactor(value) {
     return 1;
   }
 
-  return Math.min(1, Math.max(0, factor));
+  return Math.min(10, Math.max(0, factor));
 }
 
 function isDefaultProfileName(name) {

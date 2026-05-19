@@ -129,7 +129,7 @@ function numberValue(input) {
 }
 
 function clampWeightFactor(value) {
-  return Math.min(1, Math.max(0, value));
+  return Math.min(10, Math.max(0, value));
 }
 
 function showBallastTooltipForInput(tooltip, input, text) {
@@ -694,34 +694,6 @@ function updateFrontSeatRangeDisplay(aircraft, items) {
     elements.frontSeatRangeValue.style.display = "block";
   } else {
     elements.frontSeatRangeValue.style.display = "none";
-  }
-}
-
-function logFrontSeatWeightRange() {
-  const aircraft = aircraftFromForm();
-  const items = combinedItemsFromForm();
-  const definitions = itemDefinitionsFromForm();
-  const frontSeatDef = definitions.find((d) => d.isFrontSeat);
-  if (!frontSeatDef) {
-    return;
-  }
-  const range = calculateFrontSeatWeightRange(aircraft, items, frontSeatDef);
-  if (range) {
-    const nonFrontNonWaterMass = items
-      .filter((item) => !item.isFrontSeat && !item.waterBallast)
-      .reduce((sum, item) => sum + (Number(item.weight) || 0), 0);
-    const payloadMax = Number(aircraft.maxPayloadInFuselage);
-    const payloadLimitedMax = Number.isFinite(payloadMax) && payloadMax > 0
-      ? payloadMax - nonFrontNonWaterMass
-      : range.maxWeight;
-    const adjustedMax = Math.max(0, Math.min(range.maxWeight, payloadLimitedMax));
-
-    console.log(
-      `[Front Seat "${frontSeatDef.name}"] Weight range to stay within CG limits: ` +
-      `min = ${range.minWeight.toFixed(1)} kg, max = ${adjustedMax.toFixed(1)} kg`
-    );
-  } else {
-    console.log(`[Front Seat "${frontSeatDef.name}"] Unable to compute weight range (check CG limits and arm).`);
   }
 }
 
@@ -1653,7 +1625,6 @@ function recalculateAndRender() {
   elements.wingLoadingValue.textContent = `${wingLoading.toFixed(1)} kg/m²`;
   elements.cgValue.textContent = `${wetTotals.cg.toFixed(0)} mm`;
   updateFrontSeatRangeDisplay(aircraft, items);
-  logFrontSeatWeightRange();
   elements.maxWaterBallastValue.textContent = `${Math.floor(maxWaterBallast)} kg`;
 
   const statusCard = elements.balanceStatusValue.closest(".result-card.status");
