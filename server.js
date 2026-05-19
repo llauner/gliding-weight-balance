@@ -139,7 +139,8 @@ function normalizeProfile(payload) {
         arm: Number(item.arm) || 0,
         weightFactor: normalizeWeightFactor(item.weightFactor),
         permanent: Boolean(item.permanent),
-        waterBallast: Boolean(item.waterBallast)
+        waterBallast: Boolean(item.waterBallast),
+        isFrontSeat: Boolean(item.isFrontSeat)
       }))
     : Array.isArray(payload.stations)
       ? payload.stations.map((station) => ({
@@ -148,7 +149,8 @@ function normalizeProfile(payload) {
           arm: Number(station.arm) || 0,
           weightFactor: normalizeWeightFactor(station.weightFactor),
           permanent: Boolean(station.permanent),
-          waterBallast: Boolean(station.waterBallast)
+          waterBallast: Boolean(station.waterBallast),
+          isFrontSeat: Boolean(station.isFrontSeat)
         }))
       : [];
 
@@ -159,7 +161,8 @@ function normalizeProfile(payload) {
         arm: Number(item.arm) || 0,
         weightFactor: normalizeWeightFactor(item.weightFactor),
         permanent: Boolean(item.permanent),
-        waterBallast: Boolean(item.waterBallast)
+        waterBallast: Boolean(item.waterBallast),
+        isFrontSeat: Boolean(item.isFrontSeat)
       }))
     : Array.isArray(aircraft.stationDefinitions)
       ? aircraft.stationDefinitions.map((station) => ({
@@ -167,7 +170,8 @@ function normalizeProfile(payload) {
           arm: Number(station.arm) || 0,
           weightFactor: normalizeWeightFactor(station.weightFactor),
           permanent: Boolean(station.permanent),
-          waterBallast: Boolean(station.waterBallast)
+          waterBallast: Boolean(station.waterBallast),
+          isFrontSeat: Boolean(station.isFrontSeat)
         }))
       : [];
 
@@ -180,7 +184,8 @@ function normalizeProfile(payload) {
           weight: 0,
           weightFactor: item.weightFactor,
           permanent: item.permanent,
-          waterBallast: item.waterBallast
+          waterBallast: item.waterBallast,
+          isFrontSeat: Boolean(item.isFrontSeat)
         }));
 
   const persistedItemDefinitions =
@@ -191,7 +196,8 @@ function normalizeProfile(payload) {
           arm: item.arm,
           weightFactor: normalizeWeightFactor(item.weightFactor),
           permanent: Boolean(item.permanent),
-          waterBallast: Boolean(item.waterBallast)
+          waterBallast: Boolean(item.waterBallast),
+          isFrontSeat: Boolean(item.isFrontSeat)
         }));
 
   return {

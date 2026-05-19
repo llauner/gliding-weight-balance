@@ -87,7 +87,7 @@
         <p data-i18n="hero.subtitle">Calculate weight, CG while saving reusable loading profiles.</p>
       </header>
 
-      <section class="panel profile-panel">
+      <section class="panel">
         <h2 data-i18n="profiles.title">Profiles</h2>
         <div class="profile-controls">
           <input id="profileName" type="text" placeholder="Profile name" data-i18n-attr="placeholder:profiles.profileNamePlaceholder" />
@@ -213,6 +213,7 @@
                 <th data-i18n="setup.weightFactor">Weight Factor</th>
                 <th data-i18n="setup.permanent">Permanent</th>
                 <th data-i18n="setup.waterBallast">Water Ballast</th>
+                <th data-i18n="setup.frontSeat">Front Seat</th>
                 <th data-i18n="setup.action">Action</th>
               </tr>
             </thead>
@@ -248,6 +249,7 @@
         <td><input data-field="weightFactor" type="number" min="0" max="1" step="0.01" value="1" /></td>
         <td><input data-field="permanent" type="checkbox" /></td>
         <td><input data-field="waterBallast" type="checkbox" /></td>
+        <td><input data-field="frontSeat" type="radio" name="frontSeatDefinition" /></td>
         <td>
           <button data-action="remove" class="btn btn-icon danger" type="button" aria-label="Remove item" title="Remove item" data-i18n-attr="aria-label:template.removeItem;title:template.removeItem">✕</button>
         </td>

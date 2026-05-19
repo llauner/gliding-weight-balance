@@ -40,7 +40,6 @@ const elements = {
   profileIsDefault: document.querySelector("#profileIsDefault"),
   profileSelect: document.querySelector("#profileSelect"),
   saveProfileBtn: document.querySelector("#saveProfileBtn"),
-  updateProfileBtn: document.querySelector("#updateProfileBtn"),
   deleteProfileBtn: document.querySelector("#deleteProfileBtn"),
   statusText: document.querySelector("#statusText"),
   emptyWeight: document.querySelector("#emptyWeight"),
@@ -64,7 +63,6 @@ const elements = {
   languageDropdownBtn: document.querySelector("#languageDropdownBtn"),
   languageDropdownMenu: document.querySelector("#languageDropdownMenu"),
   languageDropdownCurrentFlag: document.querySelector("#languageDropdownCurrentFlag"),
-  languageDropdownCurrentLabel: document.querySelector("#languageDropdownCurrentLabel"),
   localeOptions: Array.from(document.querySelectorAll(".locale-option")),
   menuBtn: document.querySelector("#menuBtn"),
   menuDropdown: document.querySelector("#menuDropdown"),
@@ -456,9 +454,6 @@ function syncProfileControlAvailability() {
   if (elements.profileIsPublic) {
     elements.profileIsPublic.disabled = !canManage;
   }
-  if (elements.updateProfileBtn) {
-    elements.updateProfileBtn.disabled = !canManage;
-  }
   elements.deleteProfileBtn.disabled = !canManage;
   elements.profileSelect.disabled = !hasProfiles;
 
@@ -531,10 +526,6 @@ function updateLocaleButtons() {
     }
   }
 
-  if (elements.languageDropdownCurrentLabel) {
-    const labelKey = locale === "fr" ? "language.french" : "language.english";
-    elements.languageDropdownCurrentLabel.textContent = t(labelKey);
-  }
 }
 
 async function switchLocale(locale) {
@@ -611,7 +602,8 @@ function itemDefinitionsFromForm() {
     arm: numberValue(row.querySelector('[data-field="arm"]')),
     weightFactor: clampWeightFactor(numberValue(row.querySelector('[data-field="weightFactor"]'))),
     permanent: row.querySelector('[data-field="permanent"]').checked,
-    waterBallast: row.querySelector('[data-field="waterBallast"]').checked
+    waterBallast: row.querySelector('[data-field="waterBallast"]').checked,
+    isFrontSeat: row.querySelector('[data-field="frontSeat"]').checked
   }));
 }
 
@@ -673,7 +665,8 @@ function combinedItemsFromForm() {
     weight: weightMap.get(definition.id) ?? 0,
     weightFactor: definition.weightFactor,
     permanent: definition.permanent,
-    waterBallast: definition.waterBallast
+    waterBallast: definition.waterBallast,
+    isFrontSeat: definition.isFrontSeat
   }));
 }
 
@@ -996,7 +989,7 @@ function profilePayload() {
   };
 }
 
-function addItemDefinitionRow(item = { name: "", arm: 0, weightFactor: 1, permanent: false, waterBallast: false }) {
+function addItemDefinitionRow(item = { name: "", arm: 0, weightFactor: 1, permanent: false, waterBallast: false, isFrontSeat: false }) {
   const fragment = elements.itemDefinitionRowTemplate.content.cloneNode(true);
   const row = fragment.querySelector("tr");
   const definitionId = item.id || createId("def");
@@ -1008,6 +1001,11 @@ function addItemDefinitionRow(item = { name: "", arm: 0, weightFactor: 1, perman
   row.querySelector('[data-field="weightFactor"]').value = clampWeightFactor(item.weightFactor ?? 1);
   row.querySelector('[data-field="permanent"]').checked = Boolean(item.permanent);
   row.querySelector('[data-field="waterBallast"]').checked = Boolean(item.waterBallast);
+  const frontSeatInput = row.querySelector('[data-field="frontSeat"]');
+  if (frontSeatInput) {
+    frontSeatInput.name = "frontSeatDefinition";
+    frontSeatInput.checked = Boolean(item.isFrontSeat);
+  }
   row.querySelector('[data-field="name"]').placeholder = t("template.pilotPlaceholder");
   const removeButton = row.querySelector('[data-action="remove"]');
   const reorderHandle = row.querySelector('[data-role="reorder-handle"]');
@@ -1055,9 +1053,9 @@ function writeProfileToForm(profile) {
   }
 
   const fallbackDefinitions = [
-    { name: t("defaults.pilot"), arm: 420, weightFactor: 1, permanent: false, waterBallast: false },
-    { name: t("defaults.baggage"), arm: 620, weightFactor: 1, permanent: false, waterBallast: false },
-    { name: t("defaults.ballast"), arm: 280, weightFactor: 1, permanent: false, waterBallast: false }
+    { name: t("defaults.pilot"), arm: 420, weightFactor: 1, permanent: false, waterBallast: false, isFrontSeat: true },
+    { name: t("defaults.baggage"), arm: 620, weightFactor: 1, permanent: false, waterBallast: false, isFrontSeat: false },
+    { name: t("defaults.ballast"), arm: 280, weightFactor: 1, permanent: false, waterBallast: false, isFrontSeat: false }
   ];
 
   const aircraft = profile.aircraft || {};
@@ -1081,7 +1079,8 @@ function writeProfileToForm(profile) {
         arm: item.arm,
         weightFactor: item.weightFactor ?? 1,
         permanent: Boolean(item.permanent),
-        waterBallast: Boolean(item.waterBallast)
+        waterBallast: Boolean(item.waterBallast),
+        isFrontSeat: Boolean(item.isFrontSeat)
       }));
   const normalizedItemDefinitions = itemDefinitions.map((definition) => ({
     ...definition,

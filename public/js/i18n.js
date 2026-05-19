@@ -75,6 +75,7 @@ const resources = {
         weightFactor: "Weight Factor",
         permanent: "Permanent",
         waterBallast: "Water Ballast",
+        frontSeat: "Front Seat",
         action: "Action"
       },
       template: {
@@ -210,6 +211,7 @@ const resources = {
         weightFactor: "Facteur de masse",
         permanent: "Permanent",
         waterBallast: "Ballast",
+        frontSeat: "Siege avant",
         action: "Action"
       },
       template: {
