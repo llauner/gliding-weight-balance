@@ -360,7 +360,7 @@ body {
 
 .profile-controls {
   display: grid;
-  grid-template-columns: 1.25fr 1fr auto;
+  grid-template-columns: 1.25fr 1fr;
   gap: 0.5rem;
 }
 
@@ -415,6 +415,10 @@ body {
   margin: 0;
 }
 
+#profileSettingsModal #deleteProfileBtn {
+  margin-right: auto;
+}
+
 #saveProfileBtn {
   margin-left: 0;
 }
@@ -429,11 +433,6 @@ body {
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-#deleteProfileBtn {
-  grid-column: 3;
-  justify-self: end;
 }
 
 .status-text {
@@ -1078,7 +1077,7 @@ tr:hover {
   }
 
   .profile-controls {
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr;
     gap: 0.4rem;
   }
 
