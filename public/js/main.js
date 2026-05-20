@@ -1550,19 +1550,39 @@ function drawEnvelope(aircraft, dryTotals, wetTotals, balance, dryPercent, wetPe
 
   context.setLineDash([]);
 
-  // Draw dry point
-  const dryPointX = xForCg(dryTotals.cg);
-  const dryPointY = yForWeight(dryTotals.totalWeight);
+  // Draw dry point using ellipse to keep visual circle under non-uniform scaling.
+  const visualScaleX = canvas.clientWidth > 0 ? canvas.clientWidth / canvas.width : 1;
+  const visualScaleY = canvas.clientHeight > 0 ? canvas.clientHeight / canvas.height : 1;
+  const dryTargetVisualRadius = 5;
+  const dryRadiusX = dryTargetVisualRadius / Math.max(visualScaleX, 0.01);
+  const dryRadiusY = dryTargetVisualRadius / Math.max(visualScaleY, 0.01);
+  const dryPointX = Math.min(
+    width - margin.right - dryRadiusX,
+    Math.max(margin.left + dryRadiusX, xForCg(dryTotals.cg))
+  );
+  const dryPointY = Math.min(
+    height - margin.bottom - dryRadiusY,
+    Math.max(margin.top + dryRadiusY, yForWeight(dryTotals.totalWeight))
+  );
   context.beginPath();
-  context.arc(dryPointX, dryPointY, 5, 0, Math.PI * 2);
+  context.ellipse(dryPointX, dryPointY, dryRadiusX, dryRadiusY, 0, 0, Math.PI * 2);
   context.fillStyle = "#1f73e6";
   context.fill();
 
-  // Draw wet point
-  const wetPointX = xForCg(wetTotals.cg);
-  const wetPointY = yForWeight(wetTotals.totalWeight);
+  // Draw wet point using the same ellipse technique.
+  const wetTargetVisualRadius = 6;
+  const wetRadiusX = wetTargetVisualRadius / Math.max(visualScaleX, 0.01);
+  const wetRadiusY = wetTargetVisualRadius / Math.max(visualScaleY, 0.01);
+  const wetPointX = Math.min(
+    width - margin.right - wetRadiusX,
+    Math.max(margin.left + wetRadiusX, xForCg(wetTotals.cg))
+  );
+  const wetPointY = Math.min(
+    height - margin.bottom - wetRadiusY,
+    Math.max(margin.top + wetRadiusY, yForWeight(wetTotals.totalWeight))
+  );
   context.beginPath();
-  context.arc(wetPointX, wetPointY, 6, 0, Math.PI * 2);
+  context.ellipse(wetPointX, wetPointY, wetRadiusX, wetRadiusY, 0, 0, Math.PI * 2);
   context.fillStyle = balance.className === "ok" ? "#188038" : "#d33b27";
   context.fill();
 
@@ -1650,6 +1670,10 @@ async function saveProfile() {
     state.selectedProfileId = updated.id;
     await refreshProfiles({ autoLoadDefault: false });
     elements.profileSelect.value = state.selectedProfileId;
+    if (elements.aircraftSetupToggle) {
+      elements.aircraftSetupToggle.checked = false;
+      setAircraftSetupEditable(false);
+    }
     setStatus(t("status.updatedProfile", { name: updated.name }));
     return;
   }
@@ -1658,6 +1682,10 @@ async function saveProfile() {
   state.selectedProfileId = saved.id;
   await refreshProfiles({ autoLoadDefault: false });
   elements.profileSelect.value = state.selectedProfileId;
+  if (elements.aircraftSetupToggle) {
+    elements.aircraftSetupToggle.checked = false;
+    setAircraftSetupEditable(false);
+  }
   setStatus(t("status.savedProfile", { name: saved.name }));
 }
 
