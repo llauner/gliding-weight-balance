@@ -392,7 +392,12 @@ app.get("/api/profiles/:id/qrcode", optionalAuth, async (req, res) => {
   }
 });
 
-app.get(/^\/(?!api).*/, (_req, res) => {
+app.get(/^\/(?!api).*/, (req, res) => {
+  if (path.extname(req.path)) {
+    res.status(404).end();
+    return;
+  }
+
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
